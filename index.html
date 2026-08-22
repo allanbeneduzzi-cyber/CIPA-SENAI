@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SENAI 8.50 EUCLIDES FACCHINI | Controle de EPIs & CIPA</title>
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+
+  <!-- Application CSS Stylesheets -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+
+  <!-- Top App Shell Header -->
+  <header class="app-header">
+    <div class="brand-container">
+      <div class="brand-logo-wrapper">
+        <img src="assets/senai-logo-official.png" alt="Logotipo Oficial SENAI" class="senai-official-logo">
+        <div class="unit-code-badge">8.50</div>
+      </div>
+      <div class="brand-titles">
+        <h1>Escola SENAI Euclides Facchini <span>• Plataforma CIPA</span></h1>
+        <div class="brand-subtitle">Gestão de Equipamentos de Proteção Individual & Controle de Vencimento de C.A. (NR-6)</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn-header-action" id="btn-header-add-epi">
+        🛡️ Cadastrar EPI
+      </button>
+      <button class="btn-header-action" id="btn-header-add-delivery">
+        ➕ Nova Entrega de EPI
+      </button>
+      <button class="btn-primary" id="btn-header-add-collab">
+        👤 Cadastrar Colaborador
+      </button>
+    </div>
+  </header>
+
+  <!-- Main App Wrapper: Sidebar Slicer + Content Area -->
+  <div class="main-wrapper">
+    
+    <!-- Sidebar: Segmentador de Dados & Filtros -->
+    <aside class="slicer-sidebar">
+      <div class="slicer-header">
+        <h2>📊 Segmentador CIPA</h2>
+        <button class="btn-reset-filters" id="btn-reset-slicers">Limpar</button>
+      </div>
+
+      <!-- Segmentador 1: Unidade SENAI-SP -->
+      <div class="filter-group">
+        <label for="filter-unit">Unidade SENAI-SP</label>
+        <select id="filter-unit" class="filter-control">
+          <option value="all">Todas as Unidades SENAI-SP</option>
+        </select>
+      </div>
+
+      <!-- Segmentador 2: Departamento / Setor -->
+      <div class="filter-group">
+        <label for="filter-dept">Departamento / Setor</label>
+        <select id="filter-dept" class="filter-control">
+          <option value="all">Todos os Departamentos</option>
+        </select>
+      </div>
+
+      <!-- Segmentador 3: Status de Conformidade (Chips) -->
+      <div class="filter-group">
+        <label>Status do Colaborador</label>
+        <div class="status-chips-group">
+          <div class="chip-option active" data-filter="all">
+            <span>Todos os Colaboradores</span>
+            <span class="chip-count" id="count-all">0</span>
+          </div>
+          <div class="chip-option" data-filter="ok">
+            <span>🟢 100% Conforme</span>
+            <span class="chip-count" id="count-ok">0</span>
+          </div>
+          <div class="chip-option" data-filter="warning">
+            <span>🟡 Vencimento Próximo</span>
+            <span class="chip-count" id="count-warning">0</span>
+          </div>
+          <div class="chip-option" data-filter="danger">
+            <span>🔴 EPI / C.A. Vencido</span>
+            <span class="chip-count" id="count-danger">0</span>
+          </div>
+          <div class="chip-option" data-filter="missing">
+            <span>🔵 EPIs em Falta</span>
+            <span class="chip-count" id="count-missing">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: auto; padding: 0.85rem; background: var(--bg-card-subtle); border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 0.78rem; color: var(--text-muted);">
+        <strong>💡 Dica CIPA:</strong> Use o segmentador para filtrar rapidamente por oficina, laboratório ou docentes em risco.
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="content-area">
+      
+      <!-- KPI Metrics Overview Grid -->
+      <section class="kpi-grid">
+        <div class="kpi-card kpi-total">
+          <div class="kpi-top">
+            <span class="kpi-title">Total Monitorado</span>
+            <div class="kpi-icon-wrapper">👥</div>
+          </div>
+          <div class="kpi-value-container">
+            <span class="kpi-value" id="kpi-total">0</span>
+            <span class="kpi-unit">colaboradores</span>
+          </div>
+          <div class="kpi-subtext">Sob os filtros do segmentador</div>
+        </div>
+
+        <div class="kpi-card kpi-conformity">
+          <div class="kpi-top">
+            <span class="kpi-title">Taxa Conformidade</span>
+            <div class="kpi-icon-wrapper">🛡️</div>
+          </div>
+          <div class="kpi-value-container">
+            <span class="kpi-value" id="kpi-conformity">0%</span>
+          </div>
+          <div class="kpi-subtext">Meta CIPA SENAI: &gt; 95%</div>
+        </div>
+
+        <div class="kpi-card kpi-delivered">
+          <div class="kpi-top">
+            <span class="kpi-title">EPIs Entregues</span>
+            <div class="kpi-icon-wrapper">📦</div>
+          </div>
+          <div class="kpi-value-container">
+            <span class="kpi-value" id="kpi-delivered">0</span>
+            <span class="kpi-unit">itens em posse</span>
+          </div>
+          <div class="kpi-subtext">Com C.A. ativo</div>
+        </div>
+
+        <div class="kpi-card kpi-missing">
+          <div class="kpi-top">
+            <span class="kpi-title">EPIs em Falta</span>
+            <div class="kpi-icon-wrapper">⚠️</div>
+          </div>
+          <div class="kpi-value-container">
+            <span class="kpi-value" id="kpi-missing">0</span>
+            <span class="kpi-unit">pendentes</span>
+          </div>
+          <div class="kpi-subtext">Requeridos para a função</div>
+        </div>
+
+        <div class="kpi-card kpi-warning">
+          <div class="kpi-top">
+            <span class="kpi-title">Vencem &lt; 30 Dias</span>
+            <div class="kpi-icon-wrapper">⏰</div>
+          </div>
+          <div class="kpi-value-container">
+            <span class="kpi-value" id="kpi-warning">0</span>
+            <span class="kpi-unit">alertas</span>
+          </div>
+          <div class="kpi-subtext">Necessitam renovação</div>
+        </div>
+
+        <div class="kpi-card kpi-danger">
+          <div class="kpi-top">
+            <span class="kpi-title">Vencidos / Expirados</span>
+            <div class="kpi-icon-wrapper">🚨</div>
+          </div>
+          <div class="kpi-value-container">
+            <span class="kpi-value" id="kpi-danger">0</span>
+            <span class="kpi-unit">críticos</span>
+          </div>
+          <div class="kpi-subtext">Ação imediata necessária</div>
+        </div>
+      </section>
+
+      <!-- View Navigation Tabs & Search Controls -->
+      <section class="view-tabs-container">
+        <nav class="nav-tabs">
+          <button class="nav-tab active" data-tab="collaborators">
+            👥 Colaboradores & EPIs
+          </button>
+          <button class="nav-tab" data-tab="alerts">
+            🔔 Central de Vencimentos
+          </button>
+          <button class="nav-tab" data-tab="matrix">
+            📋 Matriz de Riscos NR-6
+          </button>
+          <button class="nav-tab" data-tab="reports">
+            📊 Relatórios & Ficha NR-6
+          </button>
+        </nav>
+
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <!-- Search Input -->
+          <div class="search-bar-wrapper">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="main-search-input" class="search-input" placeholder="Buscar por Nome, RE, Cargo ou EPI...">
+          </div>
+
+          <!-- View Mode Toggle (Table / Grid) -->
+          <div class="view-mode-toggle">
+            <button class="btn-view-mode active" id="btn-mode-table" title="Visualização em Tabela">
+              📄 Tabela
+            </button>
+            <button class="btn-view-mode" id="btn-mode-grid" title="Visualização em Cards Grid">
+              🎴 Cards
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Dynamic Tab Content View -->
+      <section id="tab-content-container">
+        <!-- Rendered by JS -->
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Side Drawer (Ficha de Detalhes do Colaborador) -->
+  <div class="drawer-backdrop" id="drawer-backdrop">
+    <div class="drawer-panel">
+      <div class="drawer-header">
+        <div class="drawer-profile-summary">
+          <div class="drawer-avatar" id="drawer-avatar">SP</div>
+          <div>
+            <h3 id="drawer-name" style="font-size: 1.2rem; color: white;">Nome do Colaborador</h3>
+            <div id="drawer-re" style="font-size: 0.85rem; color: #94A3B8;">RE-000000</div>
+            <div style="margin-top: 0.35rem;">
+              <span id="drawer-status-badge" class="badge badge-ok">Status</span>
+            </div>
+          </div>
+        </div>
+        <button class="btn-close-modal" id="btn-close-drawer">✕</button>
+      </div>
+
+      <div class="drawer-body">
+        <!-- Profile Info Tag -->
+        <div style="background: var(--bg-card-subtle); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 0.85rem;" id="drawer-unit-dept">
+          Unidade SENAI | Setor
+        </div>
+
+        <!-- Action Bar in Drawer -->
+        <div style="display: flex; gap: 0.5rem;">
+          <button class="btn-primary" id="btn-drawer-add-epi" style="flex: 1; justify-content: center; font-size: 0.85rem;">
+            ➕ Registrar Nova Entrega
+          </button>
+          <button class="btn-secondary" id="btn-drawer-print-nr6" style="justify-content: center; font-size: 0.85rem;">
+            🖨️ Ficha NR-6 (PDF)
+          </button>
+        </div>
+
+        <!-- Section 1: EPIs Possuídos (Entregues) -->
+        <div class="drawer-section">
+          <div class="drawer-section-title">
+            <span>📦 EPIs Atuais em Posse (Com C.A.)</span>
+          </div>
+          <div id="drawer-possessed-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <!-- Rendered JS -->
+          </div>
+        </div>
+
+        <!-- Section 2: EPIs em Falta (Pendentes) -->
+        <div class="drawer-section">
+          <div class="drawer-section-title" style="color: var(--status-missing-text);">
+            <span>⚠️ EPIs Obrigatórios em Falta (NR-6)</span>
+          </div>
+          <div id="drawer-missing-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <!-- Rendered JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Nova Entrega de EPI -->
+  <div class="modal-backdrop" id="modal-delivery">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>📦 Registrar Entrega de EPI (NR-6)</h3>
+        <button class="btn-close-modal">✕</button>
+      </div>
+      <form id="form-delivery">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="delivery-collab-id">Selecione o Colaborador SENAI-SP</label>
+            <select id="delivery-collab-id" class="form-select" required></select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="delivery-epi-name">Nome do EPI</label>
+              <input type="text" id="delivery-epi-name" class="form-input" placeholder="Ex: Óculos de Proteção Incolor" required>
+            </div>
+            <div class="form-group">
+              <label for="delivery-epi-ca">Número do C.A. (Certificado)</label>
+              <input type="text" id="delivery-epi-ca" class="form-input" placeholder="Ex: 39872" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="delivery-date">Data de Entrega ao Colaborador</label>
+              <input type="date" id="delivery-date" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label for="delivery-expiry-date">Prazo de Vencimento / Próxima Troca</label>
+              <input type="date" id="delivery-expiry-date" class="form-input" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary btn-close-modal">Cancelar</button>
+          <button type="submit" class="btn-primary">✔ Confirmar Registro de Entrega</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Cadastrar Colaborador -->
+  <div class="modal-backdrop" id="modal-add-collab">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>👤 Cadastrar Novo Colaborador</h3>
+        <button class="btn-close-modal">✕</button>
+      </div>
+      <form id="form-add-collab">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="collab-name">Nome Completo</label>
+              <input type="text" id="collab-name" class="form-input" list="employees-list" placeholder="Ex: Maria das Dores Santos" required>
+              <datalist id="employees-list"></datalist>
+            </div>
+            <div class="form-group">
+              <label for="collab-re">RE (Registro de Empregado)</label>
+              <input type="text" id="collab-re" class="form-input" placeholder="Ex: RE-904812" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="collab-unit">Unidade SENAI-SP</label>
+              <select id="collab-unit" class="form-select" required></select>
+            </div>
+            <div class="form-group">
+              <label for="collab-dept">Departamento / Setor</label>
+              <select id="collab-dept" class="form-select" required></select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="collab-role">Cargo / Função Regulamentada</label>
+              <select id="collab-role" class="form-select" required>
+                <option value="Instrutor de Soldagem">Instrutor de Soldagem</option>
+                <option value="Técnico de Usinagem CNC">Técnico de Usinagem CNC</option>
+                <option value="Especialista em Eletroeletrônica">Especialista em Eletroeletrônica</option>
+                <option value="Técnico de Laboratório de Química">Técnico de Laboratório de Química</option>
+                <option value="Mecânico de Manutenção">Mecânico de Manutenção</option>
+                <option value="Assistente Administrativo / T.I.">Assistente Administrativo / T.I.</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="collab-email">E-mail Corporativo</label>
+              <input type="email" id="collab-email" class="form-input" placeholder="nome@sp.senai.br" required>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+            <input type="checkbox" id="collab-cipa" style="width: 18px; height: 18px;">
+            <label for="collab-cipa" style="font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+              Este colaborador é membro da CIPA SENAI-SP
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary btn-close-modal">Cancelar</button>
+          <button type="submit" class="btn-primary">✔ Salvar Colaborador</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Cadastrar EPI -->
+  <div class="modal-backdrop" id="modal-add-epi">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>🛡️ Cadastrar Novo EPI no Sistema</h3>
+        <button class="btn-close-modal">✕</button>
+      </div>
+      <form id="form-add-epi">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="new-epi-name">Nome do Equipamento (EPI)</label>
+              <input type="text" id="new-epi-name" class="form-input" placeholder="Ex: Luva de Raspa" required>
+            </div>
+            <div class="form-group">
+              <label for="new-epi-ca">Número do C.A. Padrão</label>
+              <input type="text" id="new-epi-ca" class="form-input" placeholder="Ex: 12345" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="new-epi-validity">Validade Padrão (Meses)</label>
+              <input type="number" id="new-epi-validity" class="form-input" placeholder="Ex: 6" required>
+            </div>
+            <div class="form-group">
+              <label for="new-epi-role">Cargo / Função Associada</label>
+              <select id="new-epi-role" class="form-select" required>
+                <option value="Todos">Aplicável a Todos</option>
+                <option value="Instrutor de Soldagem">Instrutor de Soldagem</option>
+                <option value="Técnico de Usinagem CNC">Técnico de Usinagem CNC</option>
+                <option value="Especialista em Eletroeletrônica">Especialista em Eletroeletrônica</option>
+                <option value="Técnico de Laboratório de Química">Técnico de Laboratório de Química</option>
+                <option value="Mecânico de Manutenção">Mecânico de Manutenção</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary btn-close-modal">Cancelar</button>
+          <button type="submit" class="btn-primary">✔ Cadastrar EPI</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- App Footer -->
+  <footer class="app-footer">
+    <div><strong>SENAI 8.50 EUCLIDES FACCHINI</strong> • Comissão Interna de Prevenção de Acidentes e Assédio (CIPA) & NR-6</div>
+    <div>Sistema de Controle de Segurança e Equipamentos de Proteção Individual</div>
+  </footer>
+
+  <!-- Application JS Modules -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
