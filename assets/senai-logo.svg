@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 110" width="220" height="55">
+  <!-- Fundo Vermelho Oficial SENAI -->
+  <rect x="0" y="0" width="440" height="110" fill="#E30613"/>
+  
+  <!-- Entalhes Brancos Laterais Esquerdos -->
+  <rect x="0" y="16" width="24" height="6" fill="#FFFFFF"/>
+  <rect x="0" y="38" width="24" height="6" fill="#FFFFFF"/>
+  <rect x="0" y="60" width="24" height="6" fill="#FFFFFF"/>
+  <rect x="0" y="82" width="24" height="6" fill="#FFFFFF"/>
+  
+  <!-- Entalhes Brancos Laterais Direitos -->
+  <rect x="416" y="16" width="24" height="6" fill="#FFFFFF"/>
+  <rect x="416" y="38" width="24" height="6" fill="#FFFFFF"/>
+  <rect x="416" y="60" width="24" height="6" fill="#FFFFFF"/>
+  <rect x="416" y="82" width="24" height="6" fill="#FFFFFF"/>
+  
+  <!-- Tipografia Oficial SENAI (Itálico Bold) -->
+  <text x="220" y="82" font-family="'Impact', 'Arial Black', sans-serif" font-size="88" font-weight="900" font-style="italic" fill="#FFFFFF" text-anchor="middle" letter-spacing="2">SENAI</text>
+</svg>
