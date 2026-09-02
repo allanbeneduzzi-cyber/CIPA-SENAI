@@ -100,7 +100,7 @@ export const INITIAL_COLLABORATORS = [
   {
     id: "col-101",
     name: "Carlos Alberto Silva",
-    re: "RE-884920",
+    re: "SN-884920",
     unit: "SENAI 8.50 Euclides Facchini",
     department: "Caldeiraria & Soldagem",
     role: "Instrutor de Soldagem",
@@ -118,7 +118,7 @@ export const INITIAL_COLLABORATORS = [
   {
     id: "col-102",
     name: "Juliana Mendes Rocha",
-    re: "RE-912044",
+    re: "SN-912044",
     unit: "SENAI Vila Mariana - A. Jacob Lafer",
     department: "Laboratório de Química",
     role: "Técnico de Laboratório de Química",
@@ -136,7 +136,7 @@ export const INITIAL_COLLABORATORS = [
   {
     id: "col-103",
     name: "Roberto Fernando Souza",
-    re: "RE-748911",
+    re: "SN-748911",
     unit: "SENAI Suíço-Brasileira - Paulo Ernesto Tolle",
     department: "Usinagem CNC & Mecânica",
     role: "Técnico de Usinagem CNC",
@@ -152,7 +152,7 @@ export const INITIAL_COLLABORATORS = [
   {
     id: "col-104",
     name: "Fernanda Lima de Oliveira",
-    re: "RE-602931",
+    re: "SN-602931",
     unit: "SENAI Santo André - A. Jacob Lafer",
     department: "Eletroeletrônica & Automação",
     role: "Especialista em Eletroeletrônica",
@@ -168,7 +168,7 @@ export const INITIAL_COLLABORATORS = [
   {
     id: "col-105",
     name: "Marcelo Henrique Duarte",
-    re: "RE-553198",
+    re: "SN-553198",
     unit: "SENAI 8.50 Euclides Facchini",
     department: "Manutenção Industrial",
     role: "Mecânico de Manutenção",
@@ -186,7 +186,7 @@ export const INITIAL_COLLABORATORS = [
   {
     id: "col-106",
     name: "Aline Vasconcelos",
-    re: "RE-419082",
+    re: "SN-419082",
     unit: "SENAI São Bernardo - Almirante Tamandaré",
     department: "Automotiva & Mecatrônica",
     role: "Técnico de Usinagem CNC",
