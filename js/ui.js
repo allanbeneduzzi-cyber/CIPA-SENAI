@@ -38,16 +38,17 @@ function renderSlicers() {
   }
   if (unitSelect) unitSelect.value = state.selectedUnit;
 
-  if (deptSelect && deptSelect.options.length <= 1) {
+  if (deptSelect) {
+    const currentVal = state.selectedDepartment;
     deptSelect.innerHTML = '<option value="all">Todos os Departamentos</option>';
-    DEPARTMENTS.forEach(d => {
+    state.getDepartments().forEach(d => {
       const opt = document.createElement('option');
       opt.value = d;
       opt.textContent = d;
       deptSelect.appendChild(opt);
     });
+    deptSelect.value = currentVal;
   }
-  if (deptSelect) deptSelect.value = state.selectedDepartment;
 
   // Status Chips Counts
   const allList = state.collaborators;
@@ -73,8 +74,8 @@ function renderSlicers() {
  * 2. Render KPI Summary Cards
  */
 function renderKPICards() {
-  const filtered = state.getFilteredCollaborators();
-  const metrics = calculateKPIMetrics(filtered);
+  const kpiList = state.getCollaboratorsForKPIs();
+  const metrics = calculateKPIMetrics(kpiList);
 
   document.getElementById('kpi-total').textContent = metrics.totalCollaborators;
   document.getElementById('kpi-conformity').textContent = `${metrics.conformityPercentage}%`;
@@ -82,6 +83,15 @@ function renderKPICards() {
   document.getElementById('kpi-missing').textContent = metrics.totalMissingEPIs;
   document.getElementById('kpi-warning').textContent = metrics.warningCount;
   document.getElementById('kpi-danger').textContent = metrics.expiredCount;
+
+  // Active status visual indicator on cards
+  const filter = state.selectedStatusFilter;
+  document.querySelector('.kpi-total')?.classList.toggle('active', filter === 'all' && state.activeTab === 'collaborators');
+  document.querySelector('.kpi-conformity')?.classList.toggle('active', filter === 'ok');
+  document.querySelector('.kpi-delivered')?.classList.toggle('active', filter === 'delivered');
+  document.querySelector('.kpi-missing')?.classList.toggle('active', filter === 'missing');
+  document.querySelector('.kpi-warning')?.classList.toggle('active', filter === 'warning');
+  document.querySelector('.kpi-danger')?.classList.toggle('active', filter === 'danger');
 }
 
 /**
@@ -168,9 +178,17 @@ function renderCollaboratorsView() {
             </div>
           </td>
           <td style="text-align: right;">
-            <button class="btn-secondary btn-open-drawer" data-collab-id="${collab.id}" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
-              📋 Ficha / Detalhes
-            </button>
+            <div style="display: flex; gap: 0.35rem; justify-content: flex-end;">
+              <button class="btn-secondary btn-open-drawer" data-collab-id="${collab.id}" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;" title="Ver Ficha">
+                📋 Detalhes
+              </button>
+              <button class="btn-secondary btn-edit-collab" data-collab-id="${collab.id}" style="padding: 0.35rem 0.55rem; font-size: 0.8rem;" title="Alterar Setor / Editar">
+                ✏️
+              </button>
+              <button class="btn-secondary btn-delete-collab" data-collab-id="${collab.id}" style="padding: 0.35rem 0.55rem; font-size: 0.8rem; background: #FEF2F2; color: #DC2626; border: 1px solid #FCA5A5;" title="Excluir Colaborador">
+                🗑️
+              </button>
+            </div>
           </td>
         </tr>
       `;
@@ -181,7 +199,7 @@ function renderCollaboratorsView() {
         <table class="custom-table">
           <thead>
             <tr>
-              <th>Colaborador / RE</th>
+              <th>Colaborador / SN</th>
               <th>Unidade SENAI & Setor</th>
               <th>Status CIPA</th>
               <th>EPIs Possuídos vs Em Falta</th>
@@ -229,9 +247,17 @@ function renderCollaboratorsView() {
 
           <div class="collab-card-footer">
             <span>Membro CIPA: <strong>${collab.cipaMember ? 'SIM' : 'NÃO'}</strong></span>
-            <button class="btn-primary btn-open-drawer" data-collab-id="${collab.id}" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">
-              Ver Ficha Complete
-            </button>
+            <div style="display: flex; gap: 0.35rem;">
+              <button class="btn-primary btn-open-drawer" data-collab-id="${collab.id}" style="padding: 0.35rem 0.65rem; font-size: 0.8rem;">
+                Ficha
+              </button>
+              <button class="btn-secondary btn-edit-collab" data-collab-id="${collab.id}" style="padding: 0.35rem 0.55rem; font-size: 0.8rem;" title="Alterar Setor / Editar">
+                ✏️
+              </button>
+              <button class="btn-secondary btn-delete-collab" data-collab-id="${collab.id}" style="padding: 0.35rem 0.55rem; font-size: 0.8rem; background: #FEF2F2; color: #DC2626; border: 1px solid #FCA5A5;" title="Excluir Colaborador">
+                🗑️
+              </button>
+            </div>
           </div>
         </div>
       `;
@@ -246,11 +272,42 @@ function renderCollaboratorsView() {
 }
 
 function attachCollaboratorViewEvents() {
-  document.querySelectorAll('.collab-row-item, .btn-open-drawer, .collaborator-card').forEach(el => {
+  document.querySelectorAll('.btn-open-drawer').forEach(el => {
     el.addEventListener('click', (e) => {
+      e.stopPropagation();
       const id = el.dataset.collabId || el.closest('[data-collab-id]')?.dataset.collabId;
       if (id) {
         state.setSelectedCollaboratorId(id);
+      }
+    });
+  });
+
+  document.querySelectorAll('.collab-row-item, .collaborator-card').forEach(el => {
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('.btn-edit-collab') || e.target.closest('.btn-delete-collab')) return;
+      const id = el.dataset.collabId || el.closest('[data-collab-id]')?.dataset.collabId;
+      if (id) {
+        state.setSelectedCollaboratorId(id);
+      }
+    });
+  });
+
+  document.querySelectorAll('.btn-edit-collab').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = el.dataset.collabId || el.closest('[data-collab-id]')?.dataset.collabId;
+      if (id && window.openEditCollabModal) {
+        window.openEditCollabModal(id);
+      }
+    });
+  });
+
+  document.querySelectorAll('.btn-delete-collab').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = el.dataset.collabId || el.closest('[data-collab-id]')?.dataset.collabId;
+      if (id && window.openDeleteCollabModal) {
+        window.openDeleteCollabModal(id);
       }
     });
   });
@@ -299,6 +356,15 @@ function renderAlertsView() {
   });
 
   alertItems.sort((a, b) => a.days - b.days);
+
+  // Filter alert items based on active status filter
+  if (state.selectedStatusFilter === 'danger') {
+    alertItems = alertItems.filter(item => item.isExpired);
+  } else if (state.selectedStatusFilter === 'warning') {
+    alertItems = alertItems.filter(item => !item.isExpired && !item.isMissing);
+  } else if (state.selectedStatusFilter === 'missing') {
+    alertItems = alertItems.filter(item => item.isMissing);
+  }
 
   if (alertItems.length === 0) {
     return `
@@ -550,7 +616,51 @@ function renderDrawerIfNeeded() {
   document.getElementById('drawer-status-badge').className = `badge ${overall.badgeClass}`;
   document.getElementById('drawer-status-badge').textContent = overall.label;
 
-  document.getElementById('drawer-unit-dept').textContent = `${collab.unit} | Setor: ${collab.department}`;
+  const deptBox = document.getElementById('drawer-unit-dept-box');
+  if (deptBox) {
+    deptBox.innerHTML = `
+      <div>
+        <div style="color: var(--text-muted); font-size: 0.78rem;">${collab.unit}</div>
+        <div style="margin-top: 2px;">
+          Setor: <strong id="drawer-dept-label" style="color: var(--text-primary);">${collab.department}</strong>
+        </div>
+      </div>
+      <div id="drawer-dept-actions">
+        <button class="btn-secondary" id="btn-drawer-edit-dept" style="padding: 0.3rem 0.65rem; font-size: 0.78rem; white-space: nowrap;">
+          ✏️ Alterar Setor
+        </button>
+      </div>
+    `;
+
+    const editBtn = document.getElementById('btn-drawer-edit-dept');
+    if (editBtn) {
+      editBtn.onclick = (e) => {
+        e.stopPropagation();
+        const actionsDiv = document.getElementById('drawer-dept-actions');
+        const deptOptions = state.getDepartments().map(d => `<option value="${d}" ${d === collab.department ? 'selected' : ''}>${d}</option>`).join('');
+        
+        actionsDiv.innerHTML = `
+          <div style="display: flex; gap: 0.35rem; align-items: center;">
+            <select id="drawer-select-dept" class="form-select" style="padding: 0.3rem 0.5rem; font-size: 0.8rem; width: auto; max-width: 220px;">
+              ${deptOptions}
+            </select>
+            <button id="btn-save-inline-dept" class="btn-primary" style="padding: 0.3rem 0.6rem; font-size: 0.78rem;" title="Salvar Setor">✔</button>
+            <button id="btn-cancel-inline-dept" class="btn-secondary" style="padding: 0.3rem 0.5rem; font-size: 0.78rem;" title="Cancelar">✕</button>
+          </div>
+        `;
+
+        document.getElementById('btn-save-inline-dept').onclick = () => {
+          const newDept = document.getElementById('drawer-select-dept').value;
+          state.updateCollaboratorDepartment(collab.id, newDept);
+          showToast(`Setor de ${collab.name} alterado para "${newDept}" com sucesso!`, 'success');
+        };
+
+        document.getElementById('btn-cancel-inline-dept').onclick = () => {
+          renderDrawerIfNeeded();
+        };
+      };
+    }
+  }
 
   // Possessed Items List
   const possessedContainer = document.getElementById('drawer-possessed-list');
@@ -639,6 +749,20 @@ function renderDrawerIfNeeded() {
   const addEpiBtn = document.getElementById('btn-drawer-add-epi');
   if (addEpiBtn) {
     addEpiBtn.onclick = () => openDeliveryModal(collab.id);
+  }
+
+  const editDeptBtn = document.getElementById('btn-drawer-edit-dept');
+  if (editDeptBtn) {
+    editDeptBtn.onclick = () => {
+      if (window.openEditCollabModal) window.openEditCollabModal(collab.id);
+    };
+  }
+
+  const deleteCollabBtn = document.getElementById('btn-drawer-delete-collab');
+  if (deleteCollabBtn) {
+    deleteCollabBtn.onclick = () => {
+      if (window.openDeleteCollabModal) window.openDeleteCollabModal(collab.id);
+    };
   }
 }
 
