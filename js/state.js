@@ -2,14 +2,16 @@
    ESTADO REATIVO DA APLICAÇÃO - STATE JS
    ========================================================================== */
 
-import { INITIAL_COLLABORATORS } from './mockData.js';
+import { INITIAL_COLLABORATORS, DEPARTMENTS } from './mockData.js';
 import { getCollaboratorOverallStatus, getMissingEPIsForCollaborator } from './alerts.js';
 
 const STORAGE_KEY = 'CIPA_SENAI_SP_COLLABORATORS_V1';
+const STORAGE_KEY_DEPTS = 'CIPA_SENAI_SP_DEPARTMENTS_V1';
 
 class AppState {
   constructor() {
     this.collaborators = this.loadFromStorage();
+    this.departments = this.loadDepartmentsFromStorage();
     this.selectedUnit = 'all';
     this.selectedDepartment = 'all';
     this.selectedStatusFilter = 'all'; // 'all', 'ok', 'warning', 'danger', 'missing'
@@ -41,12 +43,72 @@ class AppState {
     this.notify();
   }
 
+  loadDepartmentsFromStorage() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEY_DEPTS);
+      if (data) {
+        return JSON.parse(data);
+      }
+    } catch (e) {
+      console.warn('Erro ao carregar departamentos:', e);
+    }
+    return [...DEPARTMENTS];
+  }
+
+  saveDepartmentsToStorage() {
+    try {
+      localStorage.setItem(STORAGE_KEY_DEPTS, JSON.stringify(this.departments));
+    } catch (e) {
+      console.error('Erro ao salvar departamentos:', e);
+    }
+  }
+
+  getDepartments() {
+    return this.departments;
+  }
+
+  addDepartment(name) {
+    const trimmed = name.trim();
+    if (!trimmed) return false;
+    const exists = this.departments.some(d => d.toLowerCase() === trimmed.toLowerCase());
+    if (!exists) {
+      this.departments.push(trimmed);
+      this.saveDepartmentsToStorage();
+      this.notify();
+      return true;
+    }
+    return false;
+  }
+
   subscribe(listener) {
     this.listeners.push(listener);
   }
 
   notify() {
     this.listeners.forEach(fn => fn(this));
+  }
+
+  // Filter Pipeline for KPI summary metrics (ignoring status filter)
+  getCollaboratorsForKPIs() {
+    return this.collaborators.filter(collab => {
+      if (this.selectedUnit !== 'all' && collab.unit !== this.selectedUnit) {
+        return false;
+      }
+      if (this.selectedDepartment !== 'all' && collab.department !== this.selectedDepartment) {
+        return false;
+      }
+      if (this.searchTerm.trim() !== '') {
+        const query = this.searchTerm.toLowerCase();
+        const nameMatch = collab.name.toLowerCase().includes(query);
+        const reMatch = collab.re.toLowerCase().includes(query);
+        const roleMatch = collab.role.toLowerCase().includes(query);
+        const epiMatch = (collab.epis || []).some(e => e.name.toLowerCase().includes(query) || e.ca.includes(query));
+        if (!nameMatch && !reMatch && !roleMatch && !epiMatch) {
+          return false;
+        }
+      }
+      return true;
+    });
   }
 
   // Filter Pipeline
@@ -130,6 +192,30 @@ class AppState {
   // Data Mutations
   addCollaborator(newCollab) {
     this.collaborators.unshift(newCollab);
+    this.saveToStorage();
+  }
+
+  updateCollaborator(collabId, updatedFields) {
+    const collab = this.collaborators.find(c => c.id === collabId);
+    if (collab) {
+      Object.assign(collab, updatedFields);
+      this.saveToStorage();
+    }
+  }
+
+  updateCollaboratorDepartment(collabId, newDepartment) {
+    const collab = this.collaborators.find(c => c.id === collabId);
+    if (collab) {
+      collab.department = newDepartment;
+      this.saveToStorage();
+    }
+  }
+
+  deleteCollaborator(collabId) {
+    this.collaborators = this.collaborators.filter(c => c.id !== collabId);
+    if (this.selectedCollaboratorId === collabId) {
+      this.selectedCollaboratorId = null;
+    }
     this.saveToStorage();
   }
 
