@@ -31,6 +31,9 @@
     </div>
 
     <div class="header-actions">
+      <button class="btn-header-action" id="btn-header-add-dept">
+        🏢 Cadastrar Setor
+      </button>
       <button class="btn-header-action" id="btn-header-add-epi">
         🛡️ Cadastrar EPI
       </button>
@@ -199,7 +202,7 @@
           <!-- Search Input -->
           <div class="search-bar-wrapper">
             <span class="search-icon">🔍</span>
-            <input type="text" id="main-search-input" class="search-input" placeholder="Buscar por Nome, RE, Cargo ou EPI...">
+            <input type="text" id="main-search-input" class="search-input" placeholder="Buscar por Nome, SN, Cargo ou EPI...">
           </div>
 
           <!-- View Mode Toggle (Table / Grid) -->
@@ -230,7 +233,7 @@
           <div class="drawer-avatar" id="drawer-avatar">SP</div>
           <div>
             <h3 id="drawer-name" style="font-size: 1.2rem; color: white;">Nome do Colaborador</h3>
-            <div id="drawer-re" style="font-size: 0.85rem; color: #94A3B8;">RE-000000</div>
+            <div id="drawer-re" style="font-size: 0.85rem; color: #94A3B8;">SN-000000</div>
             <div style="margin-top: 0.35rem;">
               <span id="drawer-status-badge" class="badge badge-ok">Status</span>
             </div>
@@ -240,18 +243,24 @@
       </div>
 
       <div class="drawer-body">
-        <!-- Profile Info Tag -->
-        <div style="background: var(--bg-card-subtle); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 0.85rem;" id="drawer-unit-dept">
-          Unidade SENAI | Setor
+        <!-- Profile Info Tag with Edit Setor Button -->
+        <div style="background: var(--bg-card-subtle); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between;" id="drawer-unit-dept-box">
+          <div id="drawer-unit-dept">Unidade SENAI | Setor</div>
+          <button class="btn-secondary" id="btn-drawer-edit-dept" style="padding: 0.3rem 0.65rem; font-size: 0.78rem; white-space: nowrap;">
+            ✏️ Alterar Setor
+          </button>
         </div>
 
         <!-- Action Bar in Drawer -->
-        <div style="display: flex; gap: 0.5rem;">
-          <button class="btn-primary" id="btn-drawer-add-epi" style="flex: 1; justify-content: center; font-size: 0.85rem;">
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="btn-primary" id="btn-drawer-add-epi" style="flex: 1; justify-content: center; font-size: 0.85rem; min-width: 140px;">
             ➕ Registrar Nova Entrega
           </button>
           <button class="btn-secondary" id="btn-drawer-print-nr6" style="justify-content: center; font-size: 0.85rem;">
             🖨️ Ficha NR-6 (PDF)
+          </button>
+          <button class="btn-secondary" id="btn-drawer-delete-collab" style="justify-content: center; font-size: 0.85rem; background: #FEF2F2; color: #DC2626; border: 1px solid #FCA5A5;" title="Excluir Colaborador">
+            🗑️ Excluir
           </button>
         </div>
 
@@ -338,8 +347,8 @@
               <datalist id="employees-list"></datalist>
             </div>
             <div class="form-group">
-              <label for="collab-re">RE (Registro de Empregado)</label>
-              <input type="text" id="collab-re" class="form-input" placeholder="Ex: RE-904812" required>
+              <label for="collab-re">SN (Sistema Nacional / NIF)</label>
+              <input type="text" id="collab-re" class="form-input" placeholder="Ex: SN-01023853" required>
             </div>
           </div>
 
@@ -427,6 +436,115 @@
         <div class="modal-footer">
           <button type="button" class="btn-secondary btn-close-modal">Cancelar</button>
           <button type="submit" class="btn-primary">✔ Cadastrar EPI</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Cadastrar Departamento / Setor -->
+  <div class="modal-backdrop" id="modal-add-dept">
+    <div class="modal-dialog" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3>🏢 Cadastrar Novo Departamento / Setor</h3>
+        <button class="btn-close-modal">✕</button>
+      </div>
+      <form id="form-add-dept">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="new-dept-name">Nome do Setor / Departamento</label>
+            <input type="text" id="new-dept-name" class="form-input" placeholder="Ex: Logística & Almoxarifado" required>
+          </div>
+          <div class="form-group" style="margin-top: 0.85rem;">
+            <label for="new-dept-desc">Descrição / Observações (Opcional)</label>
+            <input type="text" id="new-dept-desc" class="form-input" placeholder="Ex: Controle de estoque e recebimento de materiais">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary btn-close-modal">Cancelar</button>
+          <button type="submit" class="btn-primary">✔ Cadastrar Setor</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Editar Colaborador & Alterar Setor -->
+  <div class="modal-backdrop" id="modal-edit-collab">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>✏️ Editar Colaborador & Alterar Setor</h3>
+        <button class="btn-close-modal">✕</button>
+      </div>
+      <form id="form-edit-collab">
+        <input type="hidden" id="edit-collab-id">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-collab-name">Nome Completo</label>
+              <input type="text" id="edit-collab-name" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label for="edit-collab-re">SN (Sistema Nacional / NIF)</label>
+              <input type="text" id="edit-collab-re" class="form-input" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-collab-unit">Unidade SENAI-SP</label>
+              <select id="edit-collab-unit" class="form-select" required></select>
+            </div>
+            <div class="form-group">
+              <label for="edit-collab-dept" style="font-weight: 700; color: var(--senai-blue-accent);">Departamento / Setor ✏️</label>
+              <select id="edit-collab-dept" class="form-select" required></select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-collab-role">Cargo / Função Regulamentada</label>
+              <select id="edit-collab-role" class="form-select" required></select>
+            </div>
+            <div class="form-group">
+              <label for="edit-collab-email">E-mail Corporativo</label>
+              <input type="email" id="edit-collab-email" class="form-input" required>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+            <input type="checkbox" id="edit-collab-cipa" style="width: 18px; height: 18px;">
+            <label for="edit-collab-cipa" style="font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+              Este colaborador é membro da CIPA SENAI-SP
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary btn-close-modal">Cancelar</button>
+          <button type="submit" class="btn-primary">✔ Salvar Alterações</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Confirmar Exclusão de Colaborador -->
+  <div class="modal-backdrop" id="modal-confirm-delete">
+    <div class="modal-dialog" style="max-width: 450px;">
+      <div class="modal-header" style="background: #FEF2F2; border-bottom: 1px solid #FCA5A5;">
+        <h3 style="color: #DC2626;">🗑️ Confirmar Exclusão de Colaborador</h3>
+        <button class="btn-close-modal">✕</button>
+      </div>
+      <form id="form-confirm-delete">
+        <input type="hidden" id="delete-collab-id">
+        <div class="modal-body">
+          <p style="font-size: 0.95rem; color: var(--text-primary);">
+            Tem certeza de que deseja excluir o colaborador <strong id="delete-collab-name-text"></strong> (<span id="delete-collab-re-text"></span>)?
+          </p>
+          <div style="margin-top: 0.85rem; padding: 0.75rem; background: #FEF2F2; border-radius: var(--radius-sm); border: 1px solid #FCA5A5; color: #991B1B; font-size: 0.82rem;">
+            ⚠️ <strong>Atenção:</strong> Todos os registros de EPIs e entregas deste colaborador serão excluídos permanentemente.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary btn-close-modal">Cancelar</button>
+          <button type="submit" class="btn-primary" style="background: #DC2626; border-color: #DC2626;">🗑️ Confirmar Exclusão</button>
         </div>
       </form>
     </div>
