@@ -22,6 +22,8 @@
   transition: var(--transition-normal);
   position: relative;
   overflow: hidden;
+  cursor: pointer;
+  user-select: none;
 }
 
 .kpi-card::before {
@@ -45,6 +47,15 @@
 .kpi-card.kpi-missing::before { background: var(--status-missing); }
 .kpi-card.kpi-warning::before { background: var(--status-warning); }
 .kpi-card.kpi-danger::before { background: var(--status-danger); }
+
+.kpi-card.active {
+  box-shadow: 0 0 0 2px var(--senai-navy), var(--shadow-md);
+}
+.kpi-card.kpi-conformity.active { box-shadow: 0 0 0 2px var(--status-ok), var(--shadow-md); }
+.kpi-card.kpi-delivered.active { box-shadow: 0 0 0 2px var(--senai-blue-accent), var(--shadow-md); }
+.kpi-card.kpi-missing.active { box-shadow: 0 0 0 2px var(--status-missing), var(--shadow-md); }
+.kpi-card.kpi-warning.active { box-shadow: 0 0 0 2px var(--status-warning), var(--shadow-md); }
+.kpi-card.kpi-danger.active { box-shadow: 0 0 0 2px var(--status-danger), var(--shadow-md); }
 
 .kpi-top {
   display: flex;
