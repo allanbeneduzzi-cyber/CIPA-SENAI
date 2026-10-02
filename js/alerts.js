@@ -35,7 +35,7 @@ export function getEPIStatus(expiryDateStr) {
  * Calculates missing EPIs for a collaborator based on their Role in the Matrix
  */
 export function getMissingEPIsForCollaborator(collaborator) {
-  const requiredEPIs = ROLE_EPI_MATRIX[collaborator.role] || [];
+  const requiredEPIs = ROLE_EPI_MATRIX[collaborator.role] || ROLE_EPI_MATRIX[collaborator.department] || [];
   const possessedNames = (collaborator.epis || []).map(e => e.name.toLowerCase().trim());
   
   return requiredEPIs.filter(req => {
@@ -77,6 +77,8 @@ export function calculateKPIMetrics(collaboratorsList) {
   let totalCollaborators = collaboratorsList.length;
   let conformCount = 0;
   let totalDeliveredEPIs = 0;
+  let activeDeliveredEPIs = 0;
+  let expiredDeliveredEPIs = 0;
   let totalMissingEPIs = 0;
   let warningCount = 0;
   let expiredCount = 0;
@@ -93,8 +95,13 @@ export function calculateKPIMetrics(collaboratorsList) {
     (col.epis || []).forEach(epi => {
       totalDeliveredEPIs++;
       const days = calculateDaysRemaining(epi.expiryDate);
-      if (days < 0) expiredCount++;
-      else if (days <= 30) warningCount++;
+      if (days < 0) {
+        expiredDeliveredEPIs++;
+        expiredCount++;
+      } else {
+        activeDeliveredEPIs++;
+        if (days <= 30) warningCount++;
+      }
     });
   });
 
@@ -106,6 +113,8 @@ export function calculateKPIMetrics(collaboratorsList) {
     totalCollaborators,
     conformityPercentage,
     totalDeliveredEPIs,
+    activeDeliveredEPIs,
+    expiredDeliveredEPIs,
     totalMissingEPIs,
     warningCount,
     expiredCount

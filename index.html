@@ -64,11 +64,11 @@
         </select>
       </div>
 
-      <!-- Segmentador 2: Departamento / Setor -->
+      <!-- Segmentador 2: Área / Setor -->
       <div class="filter-group">
-        <label for="filter-dept">Departamento / Setor</label>
+        <label for="filter-dept">Área / Setor</label>
         <select id="filter-dept" class="filter-control">
-          <option value="all">Todos os Departamentos</option>
+          <option value="all">Todas as Áreas / Setores</option>
         </select>
       </div>
 
@@ -132,7 +132,7 @@
           <div class="kpi-subtext">Meta CIPA SENAI: &gt; 95%</div>
         </div>
 
-        <div class="kpi-card kpi-delivered">
+        <div class="kpi-card kpi-delivered" title="Clique para abrir o Inventário Completo de EPIs Entregues" style="cursor: pointer;">
           <div class="kpi-top">
             <span class="kpi-title">EPIs Entregues</span>
             <div class="kpi-icon-wrapper">📦</div>
@@ -141,7 +141,7 @@
             <span class="kpi-value" id="kpi-delivered">0</span>
             <span class="kpi-unit">itens em posse</span>
           </div>
-          <div class="kpi-subtext">Com C.A. ativo</div>
+          <div class="kpi-subtext" id="kpi-delivered-subtext">Com C.A. ativo</div>
         </div>
 
         <div class="kpi-card kpi-missing">
@@ -179,6 +179,18 @@
           </div>
           <div class="kpi-subtext">Ação imediata necessária</div>
         </div>
+
+        <div class="kpi-card kpi-stock" title="Clique para abrir o Controle de Estoque & Almoxarifado" style="cursor: pointer;">
+          <div class="kpi-top">
+            <span class="kpi-title">Estoque Disponível</span>
+            <div class="kpi-icon-wrapper">🏬</div>
+          </div>
+          <div class="kpi-value-container">
+            <span class="kpi-value" id="kpi-stock-total">0</span>
+            <span class="kpi-unit">unidades</span>
+          </div>
+          <div class="kpi-subtext" id="kpi-stock-subtext">Almoxarifado CIPA</div>
+        </div>
       </section>
 
       <!-- View Navigation Tabs & Search Controls -->
@@ -195,6 +207,9 @@
           </button>
           <button class="nav-tab" data-tab="reports">
             📊 Relatórios & Ficha NR-6
+          </button>
+          <button class="nav-tab" data-tab="stock">
+            📦 Estoque & Almoxarifado
           </button>
         </nav>
 
@@ -304,7 +319,10 @@
           <div class="form-row">
             <div class="form-group">
               <label for="delivery-epi-name">Nome do EPI</label>
-              <input type="text" id="delivery-epi-name" class="form-input" placeholder="Ex: Óculos de Proteção Incolor" required>
+              <div class="autocomplete-wrapper">
+                <input type="text" id="delivery-epi-name" class="form-input" placeholder="Ex: Óculos de Proteção Incolor — comece a digitar..." autocomplete="off" required>
+                <ul class="autocomplete-list" id="autocomplete-delivery-epi"></ul>
+              </div>
             </div>
             <div class="form-group">
               <label for="delivery-epi-ca">Número do C.A. (Certificado)</label>
@@ -358,7 +376,7 @@
               <select id="collab-unit" class="form-select" required></select>
             </div>
             <div class="form-group">
-              <label for="collab-dept">Departamento / Setor</label>
+              <label for="collab-dept">Área / Setor</label>
               <select id="collab-dept" class="form-select" required></select>
             </div>
           </div>
@@ -408,7 +426,10 @@
           <div class="form-row">
             <div class="form-group">
               <label for="new-epi-name">Nome do Equipamento (EPI)</label>
-              <input type="text" id="new-epi-name" class="form-input" placeholder="Ex: Luva de Raspa" required>
+              <div class="autocomplete-wrapper">
+                <input type="text" id="new-epi-name" class="form-input" placeholder="Ex: Luva de Raspa — comece a digitar..." autocomplete="off" required>
+                <ul class="autocomplete-list" id="autocomplete-new-epi"></ul>
+              </div>
             </div>
             <div class="form-group">
               <label for="new-epi-ca">Número do C.A. Padrão</label>
@@ -431,6 +452,21 @@
                 <option value="Mecânico de Manutenção">Mecânico de Manutenção</option>
               </select>
             </div>
+          </div>
+
+          <div class="form-row" style="margin-top: 0.5rem; padding-top: 0.75rem; border-top: 1px dashed var(--border-color);">
+            <div class="form-group">
+              <label for="new-epi-initial-stock">Estoque Inicial (Almoxarifado)</label>
+              <input type="number" id="new-epi-initial-stock" class="form-input" placeholder="Ex: 30" value="20" min="0" required>
+            </div>
+            <div class="form-group">
+              <label for="new-epi-min-stock">Estoque Mínimo de Alerta</label>
+              <input type="number" id="new-epi-min-stock" class="form-input" placeholder="Ex: 5" value="5" min="1" required>
+            </div>
+          </div>
+          <div class="form-group" style="margin-top: 0.5rem;">
+            <label for="new-epi-location">Localização / Armário (Opcional)</label>
+            <input type="text" id="new-epi-location" class="form-input" placeholder="Ex: Armário A-02 • Prateleira 2">
           </div>
         </div>
         <div class="modal-footer">
@@ -545,6 +581,97 @@
         <div class="modal-footer">
           <button type="button" class="btn-secondary btn-close-modal">Cancelar</button>
           <button type="submit" class="btn-primary" style="background: #DC2626; border-color: #DC2626;">🗑️ Confirmar Exclusão</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Inventário de EPIs Entregues (NR-6) -->
+  <div class="modal-backdrop" id="modal-delivered-inventory">
+    <div class="modal-dialog modal-lg" style="max-width: 920px; width: 95%;">
+      <div class="modal-header">
+        <div>
+          <h3>📦 Inventário Geral de EPIs Entregues (NR-6)</h3>
+          <p style="font-size: 0.82rem; color: rgba(255,255,255,0.85); margin-top: 2px;">
+            Relação completa de todos os equipamentos sob a posse dos colaboradores e status de C.A.
+          </p>
+        </div>
+        <button class="btn-close-modal">✕</button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem;">
+        <!-- Resumo & Barra de Filtro Rápido -->
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;" id="delivered-inventory-badges">
+            <span class="badge" style="background: #E0F2FE; color: #0369A1; font-weight: 600; padding: 0.35rem 0.65rem;" id="modal-inv-total">Total: 0 itens</span>
+            <span class="badge" style="background: #DCFCE7; color: #15803D; font-weight: 600; padding: 0.35rem 0.65rem;" id="modal-inv-valid">C.A. Válido: 0</span>
+            <span class="badge" style="background: #FEF3C7; color: #B45309; font-weight: 600; padding: 0.35rem 0.65rem;" id="modal-inv-warning">Vencendo: 0</span>
+            <span class="badge" style="background: #FEE2E2; color: #B91C1C; font-weight: 600; padding: 0.35rem 0.65rem;" id="modal-inv-expired">Vencidos: 0</span>
+          </div>
+          <div style="flex: 1; max-width: 320px; min-width: 200px;">
+            <input type="text" id="delivered-inventory-search" class="form-input" placeholder="🔍 Buscar EPI, Colaborador, C.A., Setor..." style="font-size: 0.85rem; padding: 0.45rem 0.75rem;">
+          </div>
+        </div>
+
+        <!-- Tabela com scroll -->
+        <div class="table-container" style="max-height: 420px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+          <table class="custom-table" style="width: 100%; font-size: 0.85rem;">
+            <thead style="position: sticky; top: 0; background: #F8FAFC; z-index: 2;">
+              <tr>
+                <th>EPI / Equipamento</th>
+                <th>Colaborador em Posse</th>
+                <th>Setor / Unidade</th>
+                <th>Entrega</th>
+                <th>Validade C.A.</th>
+                <th>Status</th>
+                <th style="text-align: right;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="delivered-inventory-tbody">
+              <!-- Preenchido via JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" class="btn-primary" id="btn-inventory-new-delivery" style="font-size: 0.85rem;">
+          ➕ Registrar Nova Entrega
+        </button>
+        <button type="button" class="btn-secondary btn-close-modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Registrar Entrada / Reposição de Estoque -->
+  <div class="modal-backdrop" id="modal-stock-entry">
+    <div class="modal-dialog" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>📦 Registrar Entrada de Estoque</h3>
+        <button class="btn-close-modal">✕</button>
+      </div>
+      <form id="form-stock-entry">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="stock-entry-item-id">Selecione o EPI para Reposição</label>
+            <select id="stock-entry-item-id" class="form-select" required></select>
+          </div>
+          <div class="form-row" style="margin-top: 0.75rem;">
+            <div class="form-group">
+              <label for="stock-entry-qty">Quantidade a Adicionar</label>
+              <input type="number" id="stock-entry-qty" class="form-input" min="1" placeholder="Ex: 25" required>
+            </div>
+            <div class="form-group">
+              <label for="stock-entry-unit">Unidade</label>
+              <input type="text" id="stock-entry-unit" class="form-input" value="un" required>
+            </div>
+          </div>
+          <div class="form-group" style="margin-top: 0.75rem;">
+            <label for="stock-entry-note">Origem / Nota Fiscal / Observações (Opcional)</label>
+            <input type="text" id="stock-entry-note" class="form-input" placeholder="Ex: NF 10492 - Fornecedor EPIs Brasil">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary btn-close-modal">Cancelar</button>
+          <button type="submit" class="btn-primary">✔ Confirmar Entrada</button>
         </div>
       </form>
     </div>

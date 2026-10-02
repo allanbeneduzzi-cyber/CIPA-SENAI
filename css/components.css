@@ -426,14 +426,90 @@
   border-left-color: var(--status-warning);
 }
 
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
 
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+/* ============================================================
+   AUTOCOMPLETE EPI — Dropdown de sugestões de EPIs
+   ============================================================ */
+
+.autocomplete-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.autocomplete-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  z-index: 9999;
+  max-height: 260px;
+  overflow-y: auto;
+  list-style: none;
+  padding: 0.3rem 0;
+  display: none;
+  animation: autocompleteIn 0.15s ease;
+}
+
+.autocomplete-list.open {
+  display: block;
+}
+
+@keyframes autocompleteIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.autocomplete-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1rem;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.12s;
+  gap: 0.75rem;
+}
+
+.autocomplete-item:hover,
+.autocomplete-item.focused {
+  background: #F1F5F9;
+}
+
+.autocomplete-item-name {
+  flex: 1;
+  line-height: 1.3;
+}
+
+.autocomplete-item-name mark {
+  background: none;
+  color: var(--senai-red);
+  font-weight: 700;
+}
+
+.autocomplete-item-ca {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.15rem 0.45rem;
+  white-space: nowrap;
+}
+
+.autocomplete-empty {
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-align: center;
 }

@@ -20,6 +20,8 @@ Sistema web completo para a gestão individualizada e setorial de EPIs, com cont
 | `01_plano_original.md` | Escopo funcional planejado, métricas, cargos e cronograma. |
 | `02_historico_walkthrough.md` | Estado do projeto após primeira entrega. |
 | `03_sessao_02set2026.md` | **Sessão 02/09/2026** — Correção de KPIs, exclusão/edição de colaboradores, cadastro de setores, correção de modais aninhados, refatoração de eventos, fix de botão Cancelar. |
+| `04_sessao_23set2026.md` | **Sessão 23/09/2026** — Autocomplete inteligente de EPIs nos modais com C.A. e validade automática. |
+| `05_sessao_25set2026.md` | **Sessão 25/09/2026** — Módulo de Controle de Estoque & Almoxarifado NR-6, baixa automática em entregas, modal de inventário entregue, alinhamento dos 7 cards em linha única. |
 
 ## 🔑 Regras Críticas de Desenvolvimento
 
@@ -28,16 +30,18 @@ Sistema web completo para a gestão individualizada e setorial de EPIs, com cont
 > ⚠️ **Botão Cancelar nos modais**: Use `class="btn-secondary btn-close-modal"`. O CSS em `components.css` já trata o override do estilo circular.
 
 > 🗄️ **LocalStorage Keys:**
-> - Colaboradores: `CIPA_SENAI_SP_COLLABORATORS_V1`
-> - Departamentos: `CIPA_SENAI_SP_DEPARTMENTS_V1`
+> - Colaboradores & EPIs Entregues: `CIPA_SENAI_SP_COLLABORATORS_V1`
+> - Departamentos & Setores: `CIPA_SENAI_SP_DEPARTMENTS_V1`
+> - Almoxarifado / Estoque NR-6: `CIPA_SENAI_SP_STOCK_V1`
+> - Logs de Movimentação de Estoque: `CIPA_SENAI_SP_STOCK_LOGS_V1`
 
 ## 🚀 Como Rodar
 Abra um terminal (PowerShell) na pasta raiz do projeto e execute:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\server.ps1
 ```
-Acesso: **http://localhost:3000** ou **http://127.0.0.1:3000**
+Acesso: **http://localhost:3000** ou **http://localhost:8080**
 
 ---
-*Para próximos passos, consulte o arquivo `docs/03_sessao_02set2026.md`.*
+*Para próximos passos e histórico detalhado, consulte o arquivo `docs/05_sessao_25set2026.md`.*
 

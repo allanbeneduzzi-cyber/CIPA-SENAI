@@ -40,7 +40,7 @@ function renderSlicers() {
 
   if (deptSelect) {
     const currentVal = state.selectedDepartment;
-    deptSelect.innerHTML = '<option value="all">Todos os Departamentos</option>';
+    deptSelect.innerHTML = '<option value="all">Todas as Áreas / Setores</option>';
     state.getDepartments().forEach(d => {
       const opt = document.createElement('option');
       opt.value = d;
@@ -80,9 +80,31 @@ function renderKPICards() {
   document.getElementById('kpi-total').textContent = metrics.totalCollaborators;
   document.getElementById('kpi-conformity').textContent = `${metrics.conformityPercentage}%`;
   document.getElementById('kpi-delivered').textContent = metrics.totalDeliveredEPIs;
+  
+  const deliveredSubtext = document.getElementById('kpi-delivered-subtext');
+  if (deliveredSubtext) {
+    deliveredSubtext.textContent = `${metrics.activeDeliveredEPIs} com C.A. ativo • ${metrics.expiredDeliveredEPIs} vencidos`;
+  }
+
   document.getElementById('kpi-missing').textContent = metrics.totalMissingEPIs;
   document.getElementById('kpi-warning').textContent = metrics.warningCount;
   document.getElementById('kpi-danger').textContent = metrics.expiredCount;
+
+  // Stock KPI Metrics
+  const stockMetrics = state.getStockMetrics();
+  const stockTotalEl = document.getElementById('kpi-stock-total');
+  if (stockTotalEl) stockTotalEl.textContent = stockMetrics.totalUnits;
+  
+  const stockSubtextEl = document.getElementById('kpi-stock-subtext');
+  if (stockSubtextEl) {
+    if (stockMetrics.criticalCount > 0) {
+      stockSubtextEl.innerHTML = `<span style="color: #DC2626; font-weight: 700;">🚨 ${stockMetrics.criticalCount} esgotado(s)</span>`;
+    } else if (stockMetrics.lowStockCount > 0) {
+      stockSubtextEl.innerHTML = `<span style="color: #D97706; font-weight: 600;">⚠️ ${stockMetrics.lowStockCount} em nível baixo</span>`;
+    } else {
+      stockSubtextEl.textContent = `${stockMetrics.totalModels} modelos regulamentares`;
+    }
+  }
 
   // Active status visual indicator on cards
   const filter = state.selectedStatusFilter;
@@ -92,6 +114,7 @@ function renderKPICards() {
   document.querySelector('.kpi-missing')?.classList.toggle('active', filter === 'missing');
   document.querySelector('.kpi-warning')?.classList.toggle('active', filter === 'warning');
   document.querySelector('.kpi-danger')?.classList.toggle('active', filter === 'danger');
+  document.querySelector('.kpi-stock')?.classList.toggle('active', state.activeTab === 'stock');
 }
 
 /**
@@ -114,6 +137,9 @@ function renderActiveTabContent() {
   } else if (tab === 'reports') {
     container.innerHTML = renderReportsView();
     attachReportsViewEvents();
+  } else if (tab === 'stock') {
+    container.innerHTML = renderStockView();
+    attachStockViewEvents();
   }
 }
 
@@ -166,7 +192,7 @@ function renderCollaboratorsView() {
           </td>
           <td>
             <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-primary);">${collab.unit.split('-')[0]}</div>
-            <div style="font-size: 0.78rem; color: var(--text-muted);">${collab.department}</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">${collab.department}${collab.sector ? ` • ${collab.sector}` : ''}</div>
           </td>
           <td>
             <span class="badge ${overall.badgeClass}">${overall.label}</span>
@@ -202,7 +228,7 @@ function renderCollaboratorsView() {
               <th>Colaborador / SN</th>
               <th>Unidade SENAI & Setor</th>
               <th>Status CIPA</th>
-              <th>EPIs Possuídos vs Em Falta</th>
+              <th>Status de EPI's</th>
               <th style="text-align: right;">Ações</th>
             </tr>
           </thead>
@@ -233,7 +259,7 @@ function renderCollaboratorsView() {
           </div>
 
           <div class="collab-card-body">
-            <div class="collab-unit-tag">📍 ${collab.unit.split('-')[0]} | ${collab.department}</div>
+            <div class="collab-unit-tag">📍 ${collab.unit.split('-')[0]} | ${collab.department}${collab.sector ? ` • ${collab.sector}` : ''}</div>
             <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);">
               Cargo: ${collab.role}
             </div>
@@ -591,6 +617,239 @@ function attachReportsViewEvents() {
 }
 
 /**
+ * Tab 5: Stock & Warehouse Management (NR-6)
+ */
+function renderStockView() {
+  const metrics = state.getStockMetrics();
+  const items = state.getFilteredStock();
+  const currentFilter = state.stockFilter;
+
+  const rowsHTML = items.map(item => {
+    const isZero = item.quantity === 0;
+    const isLow = !isZero && item.quantity <= item.minQuantity;
+
+    let statusBadge = '<span class="badge badge-ok">🟢 Normal</span>';
+    let progressColor = '#10B981'; // green
+
+    if (isZero) {
+      statusBadge = '<span class="badge badge-danger">🔴 Esgotado</span>';
+      progressColor = '#EF4444'; // red
+    } else if (isLow) {
+      statusBadge = '<span class="badge badge-warning">🟡 Reposição Necessária</span>';
+      progressColor = '#F59E0B'; // amber
+    }
+
+    // Progress percentage based on 2.5x min quantity as optimal level
+    const maxReference = Math.max(item.minQuantity * 2.5, item.quantity, 10);
+    const progressPercent = Math.min(100, Math.round((item.quantity / maxReference) * 100));
+
+    return `
+      <tr>
+        <td>
+          <div style="font-weight: 600; color: var(--text-primary); font-size: 0.92rem;">${item.epiName}</div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem; margin-top: 2px;">
+            <span>C.A.: <strong style="color: var(--senai-blue-accent);">${item.ca || 'N/I'}</strong></span>
+            <span>•</span>
+            <span>${item.category || 'Geral'}</span>
+          </div>
+        </td>
+        <td>
+          <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 0.82rem; background: var(--bg-card-subtle); padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border-color);">
+            📍 ${item.location || 'Almoxarifado Geral'}
+          </span>
+        </td>
+        <td style="min-width: 140px;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px;">
+            <strong style="font-size: 1rem; color: ${isZero ? 'var(--status-danger-text)' : isLow ? 'var(--status-warning-text)' : 'var(--text-primary)'};">
+              ${item.quantity} ${item.unit || 'un'}
+            </strong>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">${progressPercent}%</span>
+          </div>
+          <div style="width: 100%; height: 6px; background: #E2E8F0; border-radius: 999px; overflow: hidden;">
+            <div style="height: 100%; width: ${progressPercent}%; background: ${progressColor}; border-radius: 999px; transition: width 0.3s ease;"></div>
+          </div>
+        </td>
+        <td>
+          <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary);">
+            ${item.minQuantity} ${item.unit || 'un'}
+          </span>
+        </td>
+        <td>${statusBadge}</td>
+        <td style="text-align: right; white-space: nowrap;">
+          <button class="btn-secondary btn-stock-add" data-stock-id="${item.id}" style="padding: 0.28rem 0.55rem; font-size: 0.75rem; margin-right: 4px;" title="Adicionar entrada de estoque">
+            ➕ Entrada
+          </button>
+          <button class="btn-secondary btn-stock-sub" data-stock-id="${item.id}" data-name="${item.epiName}" style="padding: 0.28rem 0.55rem; font-size: 0.75rem; margin-right: 4px;" title="Registrar baixa manual">
+            ➖ Baixa
+          </button>
+          <button class="btn-primary btn-stock-deliver" data-epi-name="${item.epiName}" data-epi-ca="${item.ca || ''}" style="padding: 0.28rem 0.6rem; font-size: 0.75rem;" title="Entregar este EPI a um colaborador">
+            📦 Entregar
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  return `
+    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+      <!-- Stock Header Overview Cards -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+        <div style="background: white; padding: 1.15rem; border-radius: 12px; border: 1px solid var(--border-color); border-left: 4px solid #0D9488;">
+          <div style="font-size: 0.78rem; text-transform: uppercase; font-weight: 700; color: var(--text-secondary);">Total em Almoxarifado</div>
+          <div style="font-size: 1.75rem; font-weight: 800; color: var(--text-primary); margin-top: 4px;">${metrics.totalUnits} <span style="font-size: 0.85rem; font-weight: normal; color: var(--text-muted);">unidades físicas</span></div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Saldo consolidado de EPIs</div>
+        </div>
+
+        <div style="background: white; padding: 1.15rem; border-radius: 12px; border: 1px solid var(--border-color); border-left: 4px solid var(--senai-navy);">
+          <div style="font-size: 0.78rem; text-transform: uppercase; font-weight: 700; color: var(--text-secondary);">Catálogo de Modelos</div>
+          <div style="font-size: 1.75rem; font-weight: 800; color: var(--text-primary); margin-top: 4px;">${metrics.totalModels} <span style="font-size: 0.85rem; font-weight: normal; color: var(--text-muted);">tipos de EPI</span></div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Especificações regulamentadas</div>
+        </div>
+
+        <div style="background: white; padding: 1.15rem; border-radius: 12px; border: 1px solid var(--border-color); border-left: 4px solid var(--status-warning);">
+          <div style="font-size: 0.78rem; text-transform: uppercase; font-weight: 700; color: var(--status-warning-text);">Estoque Baixo</div>
+          <div style="font-size: 1.75rem; font-weight: 800; color: var(--status-warning-text); margin-top: 4px;">${metrics.lowStockCount} <span style="font-size: 0.85rem; font-weight: normal; color: var(--text-muted);">em ponto de reposição</span></div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Necessitam novo pedido</div>
+        </div>
+
+        <div style="background: white; padding: 1.15rem; border-radius: 12px; border: 1px solid var(--border-color); border-left: 4px solid var(--status-danger);">
+          <div style="font-size: 0.78rem; text-transform: uppercase; font-weight: 700; color: var(--status-danger-text);">Itens Esgotados</div>
+          <div style="font-size: 1.75rem; font-weight: 800; color: var(--status-danger-text); margin-top: 4px;">${metrics.criticalCount} <span style="font-size: 0.85rem; font-weight: normal; color: var(--text-muted);">zerados</span></div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">Ação de compra urgente</div>
+        </div>
+      </div>
+
+      <!-- Action & Filters Bar -->
+      <div style="background: white; padding: 1rem 1.25rem; border-radius: 12px; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <!-- Filters by Stock Level -->
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="btn-stock-filter ${currentFilter === 'all' ? 'active' : ''}" data-filter="all" style="padding: 0.35rem 0.75rem; font-size: 0.82rem; border-radius: 6px; border: 1px solid var(--border-color); background: ${currentFilter === 'all' ? 'var(--senai-navy)' : 'white'}; color: ${currentFilter === 'all' ? 'white' : 'var(--text-secondary)'}; font-weight: 600; cursor: pointer;">
+            Todos (${metrics.totalModels})
+          </button>
+          <button class="btn-stock-filter ${currentFilter === 'normal' ? 'active' : ''}" data-filter="normal" style="padding: 0.35rem 0.75rem; font-size: 0.82rem; border-radius: 6px; border: 1px solid var(--border-color); background: ${currentFilter === 'normal' ? '#10B981' : 'white'}; color: ${currentFilter === 'normal' ? 'white' : 'var(--text-secondary)'}; font-weight: 600; cursor: pointer;">
+            🟢 Normal (${metrics.totalModels - metrics.totalAttention})
+          </button>
+          <button class="btn-stock-filter ${currentFilter === 'low' ? 'active' : ''}" data-filter="low" style="padding: 0.35rem 0.75rem; font-size: 0.82rem; border-radius: 6px; border: 1px solid var(--border-color); background: ${currentFilter === 'low' ? '#F59E0B' : 'white'}; color: ${currentFilter === 'low' ? 'white' : 'var(--text-secondary)'}; font-weight: 600; cursor: pointer;">
+            🟡 Reposição (${metrics.lowStockCount})
+          </button>
+          <button class="btn-stock-filter ${currentFilter === 'critical' ? 'active' : ''}" data-filter="critical" style="padding: 0.35rem 0.75rem; font-size: 0.82rem; border-radius: 6px; border: 1px solid var(--border-color); background: ${currentFilter === 'critical' ? '#EF4444' : 'white'}; color: ${currentFilter === 'critical' ? 'white' : 'var(--text-secondary)'}; font-weight: 600; cursor: pointer;">
+            🔴 Zerados (${metrics.criticalCount})
+          </button>
+        </div>
+
+        <!-- Search & New Entry Action -->
+        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+          <input type="text" id="stock-search-input" class="form-input" placeholder="🔍 Buscar EPI, C.A., Local..." value="${state.stockSearchTerm}" style="font-size: 0.85rem; padding: 0.45rem 0.75rem; max-width: 250px;">
+          <button class="btn-primary" id="btn-open-stock-entry" style="font-size: 0.85rem; white-space: nowrap;">
+            ➕ Nova Entrada no Estoque
+          </button>
+        </div>
+      </div>
+
+      <!-- Stock Table View -->
+      <div class="table-container" style="background: white; border-radius: 12px; border: 1px solid var(--border-color);">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Equipamento / EPI (NR-6)</th>
+              <th>Localização / Armário</th>
+              <th>Estoque Atual</th>
+              <th>Estoque Mínimo</th>
+              <th>Situação</th>
+              <th style="text-align: right;">Ações de Almoxarifado</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHTML.length > 0 ? rowsHTML : `
+              <tr>
+                <td colspan="6" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                  🔍 Nenhum EPI encontrado sob os filtros selecionados.
+                </td>
+              </tr>
+            `}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function attachStockViewEvents() {
+  // 1. Search Filter
+  const searchInput = document.getElementById('stock-search-input');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      state.setStockSearchTerm(e.target.value);
+    });
+  }
+
+  // 2. Status Level Filter Buttons
+  document.querySelectorAll('.btn-stock-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.setStockFilter(btn.dataset.filter);
+    });
+  });
+
+  // 3. Open Stock Entry Modal
+  const btnOpenEntry = document.getElementById('btn-open-stock-entry');
+  if (btnOpenEntry) {
+    btnOpenEntry.addEventListener('click', () => {
+      openStockEntryModal();
+    });
+  }
+
+  // 4. Quick Add Stock Button
+  document.querySelectorAll('.btn-stock-add').forEach(btn => {
+    btn.addEventListener('click', () => {
+      openStockEntryModal(btn.dataset.stockId);
+    });
+  });
+
+  // 5. Quick Subtract Stock Button (-1)
+  document.querySelectorAll('.btn-stock-sub').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const stockId = btn.dataset.stockId;
+      const name = btn.dataset.name;
+      const updated = state.updateStockQuantity(stockId, -1, 'Baixa manual');
+      if (updated) {
+        showToast(`Baixa registrada: 1 unidade de "${name}" (Saldo: ${updated.quantity}).`, 'success');
+      }
+    });
+  });
+
+  // 6. Deliver Stock Item Directly
+  document.querySelectorAll('.btn-stock-deliver').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const epiName = btn.dataset.epiName;
+      const epiCa = btn.dataset.epiCa;
+      openDeliveryModal(null, epiName, epiCa);
+    });
+  });
+}
+
+/**
+ * Open Stock Entry Modal
+ */
+export function openStockEntryModal(prefillStockId = null) {
+  const modal = document.getElementById('modal-stock-entry');
+  if (!modal) return;
+
+  const select = document.getElementById('stock-entry-item-id');
+  if (select) {
+    select.innerHTML = state.getStock().map(item => `
+      <option value="${item.id}" ${item.id === prefillStockId ? 'selected' : ''}>
+        ${item.epiName} (C.A. ${item.ca}) — Atual: ${item.quantity} ${item.unit}
+      </option>
+    `).join('');
+  }
+
+  document.getElementById('stock-entry-qty').value = '';
+  document.getElementById('stock-entry-note').value = '';
+
+  modal.classList.add('active');
+}
+
+/**
  * 4. Render Employee Side Drawer Detail View
  */
 function renderDrawerIfNeeded() {
@@ -622,12 +881,12 @@ function renderDrawerIfNeeded() {
       <div>
         <div style="color: var(--text-muted); font-size: 0.78rem;">${collab.unit}</div>
         <div style="margin-top: 2px;">
-          Setor: <strong id="drawer-dept-label" style="color: var(--text-primary);">${collab.department}</strong>
+          Área / Setor: <strong id="drawer-dept-label" style="color: var(--text-primary);">${collab.department}${collab.sector ? ` (${collab.sector})` : ''}</strong>
         </div>
       </div>
       <div id="drawer-dept-actions">
         <button class="btn-secondary" id="btn-drawer-edit-dept" style="padding: 0.3rem 0.65rem; font-size: 0.78rem; white-space: nowrap;">
-          ✏️ Alterar Setor
+          ✏️ Alterar Área
         </button>
       </div>
     `;
@@ -833,3 +1092,161 @@ function formatDate(dateStr) {
   }
   return dateStr;
 }
+
+/**
+ * Render Delivered EPIs Inventory in the dedicated modal
+ */
+export function renderDeliveredInventoryModal(searchTerm = '') {
+  const tbody = document.getElementById('delivered-inventory-tbody');
+  if (!tbody) return;
+
+  const query = (searchTerm || '').trim().toLowerCase();
+  const allCollabs = state.getCollaboratorsForKPIs();
+  
+  let deliveredItems = [];
+  let totalValid = 0;
+  let totalWarning = 0;
+  let totalExpired = 0;
+
+  allCollabs.forEach(collab => {
+    (collab.epis || []).forEach(epi => {
+      const days = calculateDaysRemaining(epi.expiryDate);
+      let statusType = 'valid';
+      if (days < 0) {
+        statusType = 'expired';
+        totalExpired++;
+      } else if (days <= 30) {
+        statusType = 'warning';
+        totalWarning++;
+      } else {
+        totalValid++;
+      }
+
+      deliveredItems.push({
+        collab,
+        epi,
+        days,
+        statusType
+      });
+    });
+  });
+
+  // Update Modal Badges
+  const badgeTotal = document.getElementById('modal-inv-total');
+  const badgeValid = document.getElementById('modal-inv-valid');
+  const badgeWarning = document.getElementById('modal-inv-warning');
+  const badgeExpired = document.getElementById('modal-inv-expired');
+
+  if (badgeTotal) badgeTotal.textContent = `Total: ${deliveredItems.length} EPIs em posse`;
+  if (badgeValid) badgeValid.textContent = `C.A. Válido: ${totalValid}`;
+  if (badgeWarning) badgeWarning.textContent = `Vencendo (<30d): ${totalWarning}`;
+  if (badgeExpired) badgeExpired.textContent = `Vencidos: ${totalExpired}`;
+
+  // Filter items by search query if any
+  let filtered = deliveredItems;
+  if (query) {
+    filtered = deliveredItems.filter(item => {
+      const epiMatch = item.epi.name.toLowerCase().includes(query) || (item.epi.ca && item.epi.ca.includes(query));
+      const collabMatch = item.collab.name.toLowerCase().includes(query) || item.collab.re.toLowerCase().includes(query);
+      const deptMatch = item.collab.department.toLowerCase().includes(query) || item.collab.role.toLowerCase().includes(query);
+      return epiMatch || collabMatch || deptMatch;
+    });
+  }
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+          🔍 Nenhum EPI entregue encontrado com o termo "${searchTerm}".
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  // Sort: expired first, then warning, then valid
+  filtered.sort((a, b) => a.days - b.days);
+
+  tbody.innerHTML = filtered.map(item => {
+    const { collab, epi, days, statusType } = item;
+    
+    let badgeHTML = '';
+    if (statusType === 'expired') {
+      badgeHTML = `<span class="badge badge-danger">🔴 Vencido há ${Math.abs(days)}d</span>`;
+    } else if (statusType === 'warning') {
+      badgeHTML = `<span class="badge badge-warning">🟡 Vence em ${days}d</span>`;
+    } else {
+      badgeHTML = `<span class="badge badge-ok">🟢 Válido (${days}d)</span>`;
+    }
+
+    return `
+      <tr>
+        <td>
+          <div style="font-weight: 600; color: var(--text-primary);">${epi.name}</div>
+          <div style="font-size: 0.76rem; color: var(--text-muted); display: flex; align-items: center; gap: 4px;">
+            <span>Certificado C.A.:</span>
+            <strong style="color: var(--senai-blue-accent);">${epi.ca || 'N/I'}</strong>
+          </div>
+        </td>
+        <td>
+          <div style="font-weight: 600;">${collab.name}</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">${collab.re} • ${collab.role}</div>
+        </td>
+        <td>
+          <div>${collab.department}</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">${collab.unit.split('-')[0]}</div>
+        </td>
+        <td>${formatDate(epi.deliveryDate)}</td>
+        <td>
+          <div>${formatDate(epi.expiryDate)}</div>
+        </td>
+        <td>${badgeHTML}</td>
+        <td style="text-align: right; white-space: nowrap;">
+          <button class="btn-secondary btn-inv-renew" data-collab-id="${collab.id}" data-epi-name="${epi.name}" data-epi-ca="${epi.ca}" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; margin-right: 4px;" title="Renovar ou substituir EPI">
+            🔄 Renovar
+          </button>
+          <button class="btn-secondary btn-inv-print" data-collab-id="${collab.id}" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" title="Ver Ficha NR-6">
+            📄 Ficha
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  // Attach button events
+  tbody.querySelectorAll('.btn-inv-renew').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const modalInv = document.getElementById('modal-delivered-inventory');
+      if (modalInv) modalInv.classList.remove('active');
+      openDeliveryModal(btn.dataset.collabId, btn.dataset.epiName, btn.dataset.epiCa);
+    });
+  });
+
+  tbody.querySelectorAll('.btn-inv-print').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const collab = state.collaborators.find(c => c.id === btn.dataset.collabId);
+      if (collab && window.openNR6PrintWindow) {
+        window.openNR6PrintWindow(collab);
+      }
+    });
+  });
+}
+
+/**
+ * Open Delivered Inventory Modal
+ */
+export function openDeliveredInventoryModal() {
+  const modal = document.getElementById('modal-delivered-inventory');
+  if (!modal) return;
+
+  const searchInput = document.getElementById('delivered-inventory-search');
+  if (searchInput) {
+    searchInput.value = '';
+  }
+
+  renderDeliveredInventoryModal('');
+  modal.classList.add('active');
+}
+

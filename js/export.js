@@ -71,7 +71,7 @@ export function generateNR6PrintableHTML(collaborator) {
           <div><strong>Colaborador:</strong> ${collaborator.name}</div>
           <div><strong>SN / Registro:</strong> ${collaborator.re}</div>
           <div><strong>Unidade SENAI:</strong> ${collaborator.unit}</div>
-          <div><strong>Departamento:</strong> ${collaborator.department}</div>
+          <div><strong>Área / Setor:</strong> ${collaborator.department}${collaborator.sector ? ` (${collaborator.sector})` : ''}</div>
           <div><strong>Função / Cargo:</strong> ${collaborator.role}</div>
           <div><strong>Integrante CIPA:</strong> ${collaborator.cipaMember ? 'SIM' : 'NÃO'}</div>
         </div>
@@ -144,7 +144,7 @@ export function openNR6PrintWindow(collaborator) {
  * Download CSV report of filtered collaborators
  */
 export function downloadCSVReport(collaborators) {
-  const headers = ["ID", "Nome", "SN", "Unidade SENAI", "Departamento", "Cargo", "Status CIPA", "Qtd EPIs Possuidos", "Qtd EPIs Em Falta"];
+  const headers = ["ID", "Nome", "SN", "Unidade SENAI", "Área", "Setor", "Cargo", "Status CIPA", "Qtd EPIs Possuidos", "Qtd EPIs Em Falta"];
   
   const rows = collaborators.map(col => {
     const statusObj = getCollaboratorOverallStatus(col);
@@ -155,6 +155,7 @@ export function downloadCSVReport(collaborators) {
       `"${col.re}"`,
       `"${col.unit}"`,
       `"${col.department}"`,
+      `"${col.sector || 'Ensino'}"`,
       `"${col.role}"`,
       `"${statusObj.label}"`,
       (col.epis || []).length,
