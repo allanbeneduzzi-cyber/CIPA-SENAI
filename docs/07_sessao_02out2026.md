@@ -2,13 +2,15 @@
 
 > **Projeto:** Plataforma CIPA SENAI-SP - Controle de EPIs & Conformidade NR-6  
 > **Escola:** SENAI 8.50 Euclides Facchini  
-> **Servidor local:** `http://localhost:3000` (PowerShell HTTP Server nativo)
+> **Servidor local:** `http://localhost:3000` (PowerShell HTTP Server nativo)  
+> **Produção Vercel:** [https://cipa-senai.vercel.app](https://cipa-senai.vercel.app)  
+> **Produção GitHub Pages:** [https://allanbeneduzzi-cyber.github.io/CIPA-SENAI/](https://allanbeneduzzi-cyber.github.io/CIPA-SENAI/)
 
 ---
 
 ## Resumo das Atividades Desta Sessão
 
-Nesta sessão, foi realizada a reestruturação e enriquecimento do modelo organizacional de **Áreas e Setores** da unidade escolar, bem como o carregamento completo de todos os colaboradores a partir da planilha oficial:
+Nesta sessão, foi realizada a reestruturação e enriquecimento do modelo organizacional de **Áreas e Setores** da unidade escolar, bem como o carregamento completo de todos os colaboradores a partir da planilha oficial e a publicação online da plataforma em produção:
 
 ### 1. Atualização da Base Oficial de Colaboradores (`js/employeeDatabase.js`)
 - Inclusão dos campos `area` e `sector` para todos os colaboradores.
@@ -42,8 +44,14 @@ Nesta sessão, foi realizada a reestruturação e enriquecimento do modelo organ
 - **Modal de Cadastro de Colaborador:** Ao digitar o nome do colaborador, o sistema preenche automaticamente RE, Cargo, Área/Setor e gera o e-mail institucional padronizado (`nome.sobrenome@sp.senai.br`).
 - **Exportação (CSV & Impressão de Ficha NR-6):** Colunas e cabeçalhos atualizados com Área e Setor.
 
-### 5. Backup de Segurança
-- Gerado snapshot completo em `backups/snapshot_2026-10-02/`.
+### 5. Publicação Online & Deploy em Produção
+- Repositório GitHub atualizado em `allanbeneduzzi-cyber/CIPA-SENAI`.
+- **Deploy GitHub Pages:** [https://allanbeneduzzi-cyber.github.io/CIPA-SENAI/](https://allanbeneduzzi-cyber.github.io/CIPA-SENAI/)
+- **Deploy Vercel:** [https://cipa-senai.vercel.app](https://cipa-senai.vercel.app)
+- Testes de status HTTP 200 confirmados com sucesso em ambos os domínios.
+
+### 6. Backup de Segurança
+- Gerado snapshot de segurança consolidado em `backups/snapshot_2026-10-02/`.
 
 ---
 
@@ -59,4 +67,5 @@ Nesta sessão, foi realizada a reestruturação e enriquecimento do modelo organ
 | `js/app.js` | Preenchimento automático da Área no cadastro via autocomplete |
 | `js/export.js` | Inclusão de Área e Setor no relatório CSV e na Ficha impressa |
 | `index.html` | Atualização do label do Segmentador para "Área / Setor" |
+| `README.md` | Documentação geral atualizada com links de produção e storage V2 |
 | `docs/07_sessao_02out2026.md` | Registro completo da sessão de 02/10/2026 |

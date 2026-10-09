@@ -347,6 +347,42 @@ function initApp() {
     });
   }
 
+  // 7.3. Send Alert Form Submit (Corporate Email Mailto & Feedback)
+  const formSendAlert = document.getElementById('form-send-alert');
+  if (formSendAlert) {
+    formSendAlert.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const to = document.getElementById('alert-email-to').value.trim();
+      const subject = document.getElementById('alert-email-subject').value.trim();
+      const body = document.getElementById('alert-email-body').value.trim();
+
+      if (!to) {
+        showToast('Informe o e-mail corporativo de destino!', 'warning');
+        return;
+      }
+
+      const mailtoUrl = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      window.location.href = mailtoUrl;
+
+      closeModal('modal-send-alert');
+      showToast(`E-mail corporativo aberto no Outlook/cliente de e-mail para ${to}!`, 'success');
+    });
+  }
+
+  const btnCopyAlert = document.getElementById('btn-copy-alert-text');
+  if (btnCopyAlert) {
+    btnCopyAlert.addEventListener('click', () => {
+      const body = document.getElementById('alert-email-body').value;
+      if (body) {
+        navigator.clipboard.writeText(body).then(() => {
+          showToast('Texto da notificação copiado para a área de transferência!', 'success');
+        }).catch(() => {
+          showToast('Falha ao copiar texto.', 'warning');
+        });
+      }
+    });
+  }
+
   // Autocomplete collaborator details when a name matches the database
   const collabNameInput = document.getElementById('collab-name');
   if (collabNameInput) {

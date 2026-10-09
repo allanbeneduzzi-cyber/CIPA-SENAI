@@ -436,7 +436,22 @@ function renderAlertsView() {
             ${item.isMissing ? '<strong>Ação Requerida:</strong> Entregar este EPI ao colaborador para adequação CIPA.' : `Validade registrada: <strong>${formatDate(e.expiryDate)}</strong>`}
           </div>
           <div style="display: flex; gap: 0.5rem;">
-            <button class="btn-secondary btn-notify-item" data-collab-email="${c.email}" data-collab-name="${c.name}" data-epi-name="${e.name}" style="padding: 0.35rem 0.65rem; font-size: 0.78rem;">
+            <button class="btn-secondary btn-notify-item" 
+              data-collab-id="${c.id}"
+              data-collab-name="${c.name}"
+              data-collab-re="${c.re}"
+              data-collab-email="${c.email}"
+              data-collab-dept="${c.department}"
+              data-collab-sector="${c.sector || ''}"
+              data-collab-role="${c.role}"
+              data-epi-name="${e.name}"
+              data-epi-ca="${e.ca || ''}"
+              data-days="${item.days}"
+              data-is-expired="${item.isExpired ? 'true' : 'false'}"
+              data-is-missing="${item.isMissing ? 'true' : 'false'}"
+              data-expiry="${e.expiryDate || ''}"
+              style="padding: 0.35rem 0.65rem; font-size: 0.78rem;"
+              title="Disparar e-mail de alerta corporativo">
               📩 Enviar Alerta
             </button>
             <button class="btn-primary btn-renew-action" data-collab-id="${c.id}" data-epi-id="${e.id || ''}" data-epi-name="${e.name}" style="padding: 0.35rem 0.65rem; font-size: 0.78rem;">
@@ -477,16 +492,27 @@ function attachAlertsViewEvents() {
 
   document.querySelectorAll('.btn-notify-item').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      const name = btn.dataset.collabName;
-      const epi = btn.dataset.epiName;
-      showToast(`Alerta de renovação do EPI "${epi}" enviado com sucesso para ${name}!`, 'success');
+      openSendAlertModal({
+        collabName: btn.dataset.collabName,
+        collabRe: btn.dataset.collabRe,
+        collabEmail: btn.dataset.collabEmail,
+        collabDept: btn.dataset.collabDept,
+        collabSector: btn.dataset.collabSector,
+        collabRole: btn.dataset.collabRole,
+        epiName: btn.dataset.epiName,
+        epiCa: btn.dataset.epiCa,
+        expiryDate: btn.dataset.expiry,
+        days: parseInt(btn.dataset.days || '0', 10),
+        isExpired: btn.dataset.isExpired === 'true',
+        isMissing: btn.dataset.isMissing === 'true'
+      });
     });
   });
 
   const notifyAll = document.getElementById('btn-notify-all');
   if (notifyAll) {
     notifyAll.addEventListener('click', () => {
-      showToast('Alertas por e-mail e notificação CIPA enviados para todos os colaboradores pendentes!', 'success');
+      openBatchAlertsModal();
     });
   }
 }
@@ -963,6 +989,27 @@ function renderDrawerIfNeeded() {
               <strong style="color:var(--status-ok-text)">✔ Confirmado</strong>
             </div>
           </div>
+          ${days <= 30 ? `
+            <div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed var(--border-color); display: flex; justify-content: flex-end;">
+              <button class="btn-secondary btn-drawer-notify" 
+                data-collab-id="${collab.id}"
+                data-collab-name="${collab.name}"
+                data-collab-re="${collab.re}"
+                data-collab-email="${collab.email}"
+                data-collab-dept="${collab.department}"
+                data-collab-sector="${collab.sector || ''}"
+                data-collab-role="${collab.role}"
+                data-epi-name="${item.name}"
+                data-epi-ca="${item.ca}"
+                data-days="${days}"
+                data-is-expired="${days < 0 ? 'true' : 'false'}"
+                data-is-missing="false"
+                data-expiry="${item.expiryDate}"
+                style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">
+                📩 Notificar por E-mail
+              </button>
+            </div>
+          ` : ''}
         </div>
       `;
     }).join('');
@@ -986,9 +1033,28 @@ function renderDrawerIfNeeded() {
         <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">
           Item obrigatório para a função de <strong>${collab.role}</strong> conforme NR-6. (C.A. sugerido: ${m.ca})
         </div>
-        <button class="btn-primary btn-quick-deliver" data-collab-id="${collab.id}" data-epi-name="${m.name}" data-epi-ca="${m.ca}" style="margin-top: 0.5rem; align-self: flex-start; padding: 0.35rem 0.75rem; font-size: 0.78rem;">
-          ➕ Registrar Entrega Deste EPI
-        </button>
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; align-self: flex-start;">
+          <button class="btn-primary btn-quick-deliver" data-collab-id="${collab.id}" data-epi-name="${m.name}" data-epi-ca="${m.ca}" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">
+            ➕ Registrar Entrega Deste EPI
+          </button>
+          <button class="btn-secondary btn-drawer-notify" 
+            data-collab-id="${collab.id}"
+            data-collab-name="${collab.name}"
+            data-collab-re="${collab.re}"
+            data-collab-email="${collab.email}"
+            data-collab-dept="${collab.department}"
+            data-collab-sector="${collab.sector || ''}"
+            data-collab-role="${collab.role}"
+            data-epi-name="${m.name}"
+            data-epi-ca="${m.ca}"
+            data-days="0"
+            data-is-expired="false"
+            data-is-missing="true"
+            data-expiry=""
+            style="padding: 0.35rem 0.65rem; font-size: 0.78rem;">
+            📩 Notificar Retirada
+          </button>
+        </div>
       </div>
     `).join('');
 
@@ -998,6 +1064,26 @@ function renderDrawerIfNeeded() {
       });
     });
   }
+
+  // Bind drawer notification buttons
+  document.querySelectorAll('.btn-drawer-notify').forEach(btn => {
+    btn.addEventListener('click', () => {
+      openSendAlertModal({
+        collabName: btn.dataset.collabName,
+        collabRe: btn.dataset.collabRe,
+        collabEmail: btn.dataset.collabEmail,
+        collabDept: btn.dataset.collabDept,
+        collabSector: btn.dataset.collabSector,
+        collabRole: btn.dataset.collabRole,
+        epiName: btn.dataset.epiName,
+        epiCa: btn.dataset.epiCa,
+        expiryDate: btn.dataset.expiry,
+        days: parseInt(btn.dataset.days || '0', 10),
+        isExpired: btn.dataset.isExpired === 'true',
+        isMissing: btn.dataset.isMissing === 'true'
+      });
+    });
+  });
 
   // Bind Drawer Action Buttons
   const printBtn = document.getElementById('btn-drawer-print-nr6');
@@ -1249,4 +1335,233 @@ export function openDeliveredInventoryModal() {
   renderDeliveredInventoryModal('');
   modal.classList.add('active');
 }
+
+/**
+ * Modal de Disparo de Alerta Corporativo por E-mail (NR-6 / CIPA)
+ */
+export function openSendAlertModal({
+  collabName,
+  collabRe,
+  collabEmail,
+  collabDept,
+  collabSector,
+  collabRole,
+  epiName,
+  epiCa,
+  expiryDate,
+  days,
+  isExpired,
+  isMissing
+}) {
+  const modal = document.getElementById('modal-send-alert');
+  if (!modal) return;
+
+  const caVal = epiCa && epiCa !== 'Pendente' && epiCa !== 'N/I' ? epiCa : 'Pendente CIPA';
+  const cleanCollabName = collabName ? collabName.trim() : 'colaborador';
+
+  // Badge & Diagnóstico
+  const badgeEl = document.getElementById('alert-collab-badge');
+  let statusText = '';
+  let badgeClass = 'badge-warning';
+
+  let subject = '';
+  let body = '';
+
+  if (isExpired || (typeof days === 'number' && days < 0)) {
+    const absDays = Math.abs(days || 0);
+    statusText = `Vencido há ${absDays} dias`;
+    badgeClass = 'badge-danger';
+    subject = `[CIPA SENAI] ⚠️ Atenção: EPI Vencido - ${epiName}`;
+    body = `Olá, ${cleanCollabName}.\n\n⚠️ Atenção: EPI Vencido\n\nO item ${epiName} (C.A. ${caVal}) está com a validade expirada. Procure o setor responsável para retirar um novo equipamento antes do próximo uso.\n\nAtenciosamente,\nComissão Interna de Prevenção de Acidentes e Assédio (CIPA)\nEscola SENAI Euclides Facchini`;
+  } else if (isMissing) {
+    statusText = 'EPI em Falta / Pendente de Retirada';
+    badgeClass = 'badge-missing';
+    subject = `[CIPA SENAI] ⚠️ Atenção: EPI Pendente de Retirada - ${epiName}`;
+    body = `Olá, ${cleanCollabName}.\n\n⚠️ Atenção: EPI Pendente de Retirada (NR-6)\n\nO item ${epiName} (C.A. ${caVal}) consta como pendente de retirada para a sua função/área. Procure o setor responsável para retirar o seu equipamento antes do próximo uso.\n\nAtenciosamente,\nComissão Interna de Prevenção de Acidentes e Assédio (CIPA)\nEscola SENAI Euclides Facchini`;
+  } else {
+    statusText = `Vence em ${days} dias`;
+    badgeClass = 'badge-warning';
+    const dateFormatted = expiryDate ? formatDate(expiryDate) : '';
+    subject = `[CIPA SENAI] ⚠️ Atenção: EPI Próximo do Vencimento - ${epiName}`;
+    body = `Olá, ${cleanCollabName}.\n\n⚠️ Atenção: EPI Próximo do Vencimento\n\nO item ${epiName} (C.A. ${caVal}) vencerá em ${days} dias${dateFormatted ? ` (validade: ${dateFormatted})` : ''}. Procure o setor responsável para providenciar a substituição antes do próximo uso.\n\nAtenciosamente,\nComissão Interna de Prevenção de Acidentes e Assédio (CIPA)\nEscola SENAI Euclides Facchini`;
+  }
+
+  if (badgeEl) {
+    badgeEl.className = `badge ${badgeClass}`;
+    badgeEl.textContent = statusText;
+  }
+
+  const nameEl = document.getElementById('alert-collab-name-display');
+  if (nameEl) nameEl.textContent = `${cleanCollabName} (${collabRe || ''})`;
+
+  const metaEl = document.getElementById('alert-collab-meta-display');
+  if (metaEl) {
+    metaEl.textContent = `${collabRole || ''} • ${collabDept || ''}${collabSector ? ' - ' + collabSector : ''} • EPI: ${epiName} (C.A. ${caVal})`;
+  }
+
+  const emailInput = document.getElementById('alert-email-to');
+  if (emailInput) emailInput.value = collabEmail || '';
+
+  const subjectInput = document.getElementById('alert-email-subject');
+  if (subjectInput) subjectInput.value = subject;
+
+  const bodyInput = document.getElementById('alert-email-body');
+  if (bodyInput) bodyInput.value = body;
+
+  modal.classList.add('active');
+}
+
+/**
+ * Modal de Disparo de Alertas em Lote (NR-6 / CIPA)
+ */
+export function openBatchAlertsModal() {
+  const modal = document.getElementById('modal-batch-alerts');
+  if (!modal) return;
+
+  const pendingCollabs = [];
+  const allEmails = new Set();
+
+  state.collaborators.forEach(c => {
+    const missing = getMissingEPIsForCollaborator(c);
+    const expiredOrWarnEpis = (c.epis || []).filter(e => {
+      const days = calculateDaysRemaining(e.expiryDate);
+      return days <= 30;
+    });
+
+    if (missing.length > 0 || expiredOrWarnEpis.length > 0) {
+      if (c.email) allEmails.add(c.email);
+      pendingCollabs.push({
+        collab: c,
+        missing,
+        expiredOrWarnEpis
+      });
+    }
+  });
+
+  const summaryEl = document.getElementById('batch-alerts-summary');
+  if (summaryEl) {
+    summaryEl.innerHTML = `<strong>${pendingCollabs.length}</strong> colaboradores com pendências de EPIs identificados no sistema.`;
+  }
+
+  const tbody = document.getElementById('batch-alerts-tbody');
+  if (tbody) {
+    if (pendingCollabs.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align:center; padding: 2rem; color: var(--status-ok-text);">
+            🎉 Parabéns! Nenhum colaborador possui pendências ativas de EPIs no momento.
+          </td>
+        </tr>
+      `;
+    } else {
+      tbody.innerHTML = pendingCollabs.map(({ collab, missing, expiredOrWarnEpis }) => {
+        const issuesSummary = [
+          ...expiredOrWarnEpis.map(e => {
+            const days = calculateDaysRemaining(e.expiryDate);
+            const isExp = days < 0;
+            return `<span class="badge ${isExp ? 'badge-danger' : 'badge-warning'}" style="font-size:0.72rem; margin: 1px 2px; display:inline-block;">${e.name} (${isExp ? 'Vencido' : `${days}d`})</span>`;
+          }),
+          ...missing.map(m => `<span class="badge badge-missing" style="font-size:0.72rem; margin: 1px 2px; display:inline-block;">${m.name} (Falta)</span>`)
+        ].join(' ');
+
+        // Seleciona o item mais crítico para pré-preenchimento
+        const firstExp = expiredOrWarnEpis.find(e => calculateDaysRemaining(e.expiryDate) < 0) || expiredOrWarnEpis[0] || missing[0];
+        const isExp = firstExp && firstExp.expiryDate ? calculateDaysRemaining(firstExp.expiryDate) < 0 : false;
+        const isMiss = !expiredOrWarnEpis[0] && missing[0];
+        const daysRem = firstExp && firstExp.expiryDate ? calculateDaysRemaining(firstExp.expiryDate) : 0;
+
+        return `
+          <tr>
+            <td>
+              <strong>${collab.name}</strong>
+              <div style="font-size:0.75rem; color:var(--text-muted);">${collab.re} • ${collab.role}</div>
+            </td>
+            <td>
+              <code style="font-size:0.8rem; background: var(--bg-card-subtle); padding: 2px 5px; border-radius: 4px; color: var(--senai-blue-accent);">${collab.email}</code>
+            </td>
+            <td>${collab.department}${collab.sector ? ` • ${collab.sector}` : ''}</td>
+            <td style="max-width: 280px;">${issuesSummary}</td>
+            <td style="text-align: right;">
+              <button class="btn-secondary btn-batch-item-send" 
+                data-collab-id="${collab.id}"
+                data-collab-name="${collab.name}"
+                data-collab-re="${collab.re}"
+                data-collab-email="${collab.email}"
+                data-collab-dept="${collab.department}"
+                data-collab-sector="${collab.sector || ''}"
+                data-collab-role="${collab.role}"
+                data-epi-name="${firstExp ? firstExp.name : ''}"
+                data-epi-ca="${firstExp ? firstExp.ca : ''}"
+                data-days="${daysRem}"
+                data-is-expired="${isExp ? 'true' : 'false'}"
+                data-is-missing="${isMiss ? 'true' : 'false'}"
+                data-expiry="${firstExp && firstExp.expiryDate ? firstExp.expiryDate : ''}"
+                style="padding: 0.3rem 0.6rem; font-size: 0.78rem;">
+                📩 Notificar
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      tbody.querySelectorAll('.btn-batch-item-send').forEach(btn => {
+        btn.addEventListener('click', () => {
+          modal.classList.remove('active');
+          openSendAlertModal({
+            collabName: btn.dataset.collabName,
+            collabRe: btn.dataset.collabRe,
+            collabEmail: btn.dataset.collabEmail,
+            collabDept: btn.dataset.collabDept,
+            collabSector: btn.dataset.collabSector,
+            collabRole: btn.dataset.collabRole,
+            epiName: btn.dataset.epiName,
+            epiCa: btn.dataset.epiCa,
+            days: parseInt(btn.dataset.days || '0', 10),
+            isExpired: btn.dataset.isExpired === 'true',
+            isMissing: btn.dataset.isMissing === 'true',
+            expiryDate: btn.dataset.expiry
+          });
+        });
+      });
+    }
+  }
+
+  // Handle batch copy emails button
+  const copyBtn = document.getElementById('btn-copy-batch-emails');
+  if (copyBtn) {
+    copyBtn.onclick = () => {
+      const emailList = Array.from(allEmails).join('; ');
+      if (!emailList) {
+        showToast('Nenhum e-mail para copiar!', 'warning');
+        return;
+      }
+      navigator.clipboard.writeText(emailList).then(() => {
+        showToast(`Lista de ${allEmails.size} e-mails corporativos copiada com sucesso!`, 'success');
+      });
+    };
+  }
+
+  // Handle batch launch mailto button
+  const mailtoBtn = document.getElementById('btn-launch-batch-mailto');
+  if (mailtoBtn) {
+    mailtoBtn.onclick = () => {
+      const emailList = Array.from(allEmails).join(';');
+      if (!emailList) {
+        showToast('Nenhum e-mail com pendência para notificar!', 'warning');
+        return;
+      }
+      const bcc = encodeURIComponent(emailList);
+      const subject = encodeURIComponent('[CIPA SENAI] ⚠️ Convocação Geral: Regularização de EPIs Vencidos / Pendentes (NR-6)');
+      const body = encodeURIComponent(
+        `Prezados colaboradores,\n\nIdentificamos através do sistema de controle da CIPA da Escola SENAI Euclides Facchini que constam em seu cadastro pendências relativas à conformidade da NR-6 (equipamentos de proteção individual com validade expirada, próximos do vencimento ou pendentes de retirada).\n\nSolicitamos o seu comparecimento ao Almoxarifado / Segurança do Trabalho para conferência e regularização dos seus EPIs antes do próximo uso.\n\nAtenciosamente,\nComissão Interna de Prevenção de Acidentes e Assédio (CIPA)\nEscola SENAI Euclides Facchini`
+      );
+      window.location.href = `mailto:?bcc=${bcc}&subject=${subject}&body=${body}`;
+      showToast('Cliente de e-mail aberto com convocação geral em cópia oculta (CCO)!', 'success');
+      modal.classList.remove('active');
+    };
+  }
+
+  modal.classList.add('active');
+}
+
 
